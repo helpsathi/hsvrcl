@@ -62,25 +62,40 @@ export default function WalletPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
   const limit = 10;
 
-  const fetchWallet = async () => {
+  const fetchWallet = async (pageNum: number = 1, append: boolean = false) => {
     try {
-      setLoading(true);
-      const res = await fetch(`/api/wallet?page=${page}&limit=${limit}`);
+      if (append) setLoadingMore(true);
+      else setLoading(true);
+
+      const res = await fetch(`/api/wallet?page=${pageNum}&limit=${limit}`);
       const data = await res.json();
       if (res.ok) {
-        setWallet(data.wallet);
-        if (data.packs && data.packs.length > 0) {
-          setPacks(data.packs);
-        } else {
-          setPacks([
-            { amount: 100, label: "₹100", bonus: null, extra: null },
-            { amount: 200, label: "₹200", bonus: null, extra: null },
-            { amount: 500, label: "₹500", bonus: null, extra: "Popular" },
-            { amount: 1000, label: "₹1000", bonus: null, extra: "Best Value" },
-          ]);
+        setWallet(prev => {
+          if (append && prev) {
+            return {
+              ...data.wallet,
+              transactions: [...prev.transactions, ...data.wallet.transactions]
+            };
+          }
+          return data.wallet;
+        });
+
+        if (!append) {
+          if (data.packs && data.packs.length > 0) {
+            setPacks(data.packs);
+          } else {
+            setPacks([
+              { amount: 100, label: "₹100", bonus: null, extra: null },
+              { amount: 200, label: "₹200", bonus: null, extra: null },
+              { amount: 500, label: "₹500", bonus: null, extra: "Popular" },
+              { amount: 1000, label: "₹1000", bonus: null, extra: "Best Value" },
+            ]);
+          }
         }
+
         if (data.pagination) {
           setTotalPages(data.pagination.totalPages);
           setTotalItems(data.pagination.total);
@@ -90,11 +105,12 @@ export default function WalletPage() {
       console.error(err);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
   useEffect(() => {
-    fetchWallet();
+    fetchWallet(1, false);
     const script = document.createElement("script");
     script.src = "https://checkout.razorpay.com/v1/checkout.js";
     script.async = true;
@@ -104,7 +120,7 @@ export default function WalletPage() {
         document.body.removeChild(script);
       }
     };
-  }, [page]);
+  }, []);
 
   const couponAbortControllerRef = useRef<AbortController | null>(null);
 
@@ -456,27 +472,27 @@ export default function WalletPage() {
             </div>
           ))}
 
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between mt-6 px-2">
-              <span className="text-sm text-slate-500 font-medium">
-                Showing {((page - 1) * limit) + 1} to {Math.min(page * limit, totalItems)} of {totalItems}
-              </span>
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => setPage(p => Math.max(1, p - 1))} 
-                  disabled={page === 1}
-                  className="px-4 py-2 text-sm font-bold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 disabled:opacity-50 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition"
-                >
-                  Previous
-                </button>
-                <button 
-                  onClick={() => setPage(p => Math.min(totalPages, p + 1))} 
-                  disabled={page === totalPages}
-                  className="px-4 py-2 text-sm font-bold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 disabled:opacity-50 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition"
-                >
-                  Next
-                </button>
-              </div>
+          {page < totalPages && (
+            <div className="flex justify-center mt-6">
+              <button 
+                onClick={() => {
+                  const nextPage = page + 1;
+                  setPage(nextPage);
+                  fetchWallet(nextPage, true);
+                }} 
+                disabled={loadingMore}
+                className="px-6 py-2.5 text-sm font-bold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 disabled:opacity-50 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition shadow-sm inline-flex items-center gap-2"
+              >
+                {loadingMore ? (
+                  <>
+                    <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    Loading...
+                  </>
+                ) : "Load More Transactions"}
+              </button>
             </div>
           )}
         </div>

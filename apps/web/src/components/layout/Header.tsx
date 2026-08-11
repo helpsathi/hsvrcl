@@ -234,6 +234,7 @@ export function Header() {
     <header className="bg-surface dark:bg-slate-900 px-2.5 sm:px-4 py-2.5 sm:py-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between z-30 shrink-0 lg:px-8 relative transition-colors shadow-2xs">
       {/* Mobile Logo */}
       <div className="flex items-center gap-1.5 md:hidden shrink-0">
+        <img src="/logo.png" alt="Help Sathi" className="h-7 w-auto drop-shadow-sm" />
         <span className="font-extrabold text-lg sm:text-xl text-slate-900 dark:text-white tracking-tight leading-none">Help Sathi</span>
       </div>
 
@@ -254,7 +255,9 @@ export function Header() {
         </Suspense>
 
         {/* Persistent Theme Toggle */}
-        <ThemeToggle />
+        <div className="hidden sm:block">
+          <ThemeToggle />
+        </div>
 
         {/* Notifications Bell Link */}
         <Link
@@ -277,7 +280,7 @@ export function Header() {
           className="h-8 sm:h-9 flex items-center gap-1 sm:gap-1.5 bg-brand-main/15 dark:bg-brand-500/20 border border-brand-500 text-brand-800 dark:text-brand-300 px-2.5 sm:px-3 py-1 rounded-full font-bold text-xs sm:text-sm shadow-2xs hover:bg-brand-main/25 transition-colors shrink-0"
         >
           <Wallet weight="fill" className="text-sm sm:text-base text-brand-600 dark:text-brand-400" /> 
-          <span>₹{balance !== null ? balance.toFixed(2) : "..."}</span>
+          <span>₹{balance !== null ? (balance % 1 === 0 ? balance : balance.toFixed(2)) : "..."}</span>
         </Link>
 
         {/* User Profile Avatar */}
