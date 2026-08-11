@@ -265,8 +265,17 @@ io.on('connection', (socket) => {
         });
       }
 
-      // Re-evaluate duration and auto-end on EVERY message (in case server restarted and lost timer)
-      if (firstMsgTime && session.perMinuteRate > 0) {
+      // Check if student has active subscription
+      const activeSub = await prisma.subscription.findFirst({
+        where: {
+          studentId: session.studentId,
+          isActive: true,
+          endDate: { gt: new Date() },
+        },
+      });
+
+      // Re-evaluate duration and auto-end on EVERY message (only for pay-per-minute non-subscribed calls)
+      if (firstMsgTime && session.perMinuteRate > 0 && !activeSub) {
         const studentWallet = await prisma.wallet.findUnique({
           where: { userId: session.studentId },
         });

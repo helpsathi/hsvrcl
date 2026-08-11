@@ -42,6 +42,7 @@ export function GoogleMeetRoom({
 }: GoogleMeetRoomProps) {
   const [copied, setCopied] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
 
   const isValidMeetLink = meetLink && meetLink.startsWith("http");
 
@@ -55,8 +56,11 @@ export function GoogleMeetRoom({
   const handleSync = async () => {
     if (!onGenerateLink) return;
     setSyncing(true);
+    setSyncError(null);
     try {
       await onGenerateLink();
+    } catch (err: any) {
+      setSyncError(err.message || "Failed to generate meeting link");
     } finally {
       setSyncing(false);
     }
@@ -193,6 +197,16 @@ export function GoogleMeetRoom({
             <p className="text-xs md:text-sm text-slate-300 mb-6 leading-relaxed">
               Click below to immediately generate a Google Meet video link and automatically attach formal invitations to both the mentor&apos;s and student&apos;s Google Calendars.
             </p>
+
+            {syncError && (
+              <div className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs text-left flex items-start gap-2">
+                <WarningCircle weight="fill" className="text-rose-400 text-base shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold">Setup Failed</p>
+                  <p className="text-[11px] text-rose-200/80 mt-0.5 leading-relaxed">{syncError}</p>
+                </div>
+              </div>
+            )}
 
             {onGenerateLink ? (
               <button

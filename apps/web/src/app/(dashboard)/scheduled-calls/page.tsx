@@ -203,14 +203,34 @@ export default function ScheduledCallsPage() {
 
                     <div className="flex flex-wrap items-center gap-2 mt-1">
                       {(call.status === "CONFIRMED" || call.status === "ACCEPTED") && (
-                        <Link 
-                          href={`/meetings/${call.id}`} 
-                          target="_blank" 
-                          rel="noreferrer"
-                          className={`px-4 py-2 text-white text-sm font-bold rounded-xl flex items-center gap-1 transition ${call.meetLink && canJoin ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-blue-500 hover:bg-blue-600'}`}
-                        >
-                          <VideoCamera weight="fill" /> {call.meetLink ? "Join Meet" : "Setup Meet"}
-                        </Link>
+                        <div className="flex items-center gap-2">
+                          {call.meetLink && call.meetLink.startsWith("http") ? (
+                            <a
+                              href={call.meetLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs sm:text-sm font-black rounded-xl flex items-center gap-1.5 shadow-md transition-all hover:scale-105"
+                            >
+                              <VideoCamera weight="fill" className="text-base" /> Launch Google Meet
+                            </a>
+                          ) : (
+                            <Link 
+                              href={`/meetings/${call.id}`} 
+                              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-bold rounded-xl flex items-center gap-1.5 shadow-sm transition"
+                            >
+                              <VideoCamera weight="fill" className="text-base" /> Setup Meeting
+                            </Link>
+                          )}
+                          {call.meetLink && (
+                            <Link 
+                              href={`/meetings/${call.id}`} 
+                              className="px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl transition"
+                              title="View Meeting Details & Lobby"
+                            >
+                              Details
+                            </Link>
+                          )}
+                        </div>
                       )}
 
                       {/* Mentor Complete Call Action */}

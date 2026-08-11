@@ -324,51 +324,77 @@ export function DirectoryLoadingSkeleton() {
 
 export function ChatRoomSkeleton({ name, avatar }: { name?: string | null, avatar?: string | null } = {}) {
   return (
-    <div className="flex flex-col h-[100dvh] w-full bg-slate-50 dark:bg-slate-950 animate-in fade-in relative">
-      {/* Header */}
-      <div className="px-4 md:px-8 py-3.5 flex items-center justify-between border-b border-slate-200/60 dark:border-slate-800/60 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl">
-        <div className="flex items-center gap-4">
-          {avatar ? (
-            <img src={avatar} alt="avatar" className="w-10 h-10 rounded-full shrink-0 object-cover opacity-80" />
-          ) : (
-            <Skeleton className="w-10 h-10 rounded-full shrink-0" />
-          )}
-          <div className="space-y-1.5">
-            {name ? (
-              <div className="h-5 flex items-center text-slate-800 dark:text-slate-200 font-extrabold">{name}</div>
+    <div className="flex flex-col h-[100dvh] w-full bg-slate-50 dark:bg-slate-950 animate-in fade-in relative overflow-hidden">
+      {/* Premium Glass Header */}
+      <div className="px-4 md:px-8 py-3.5 flex items-center justify-between border-b border-slate-200/60 dark:border-slate-800/60 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-xs">
+        <div className="flex items-center gap-3.5">
+          <div className="relative">
+            {avatar ? (
+              <img src={avatar} alt="avatar" className="w-10 h-10 rounded-full shrink-0 object-cover border border-slate-200 dark:border-slate-700 shadow-sm" />
             ) : (
-              <Skeleton className="h-4 w-32 rounded-full mb-1" />
+              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-brand-400/20 to-indigo-500/20 border border-slate-200 dark:border-slate-800 animate-pulse shrink-0" />
             )}
-            <div className="flex items-center gap-2">
-              <div className="w-3.5 h-3.5 border-[2px] border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-              <span className="text-[11px] text-indigo-500 font-bold tracking-wide uppercase">Connecting securely...</span>
+            <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-900 animate-ping"></span>
+          </div>
+
+          <div className="space-y-1">
+            {name ? (
+              <h3 className="h-5 flex items-center text-slate-900 dark:text-white font-extrabold text-sm">{name}</h3>
+            ) : (
+              <div className="h-4 w-32 bg-slate-200 dark:bg-slate-800 rounded-full animate-pulse" />
+            )}
+            <div className="flex items-center gap-1.5 text-xs text-indigo-600 dark:text-indigo-400 font-bold">
+              <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span>
+              <span>Preparing encrypted room...</span>
             </div>
           </div>
         </div>
-        <div className="flex gap-3">
-          <Skeleton className="w-10 h-10 rounded-full shrink-0" />
+
+        <div className="flex items-center gap-2">
+          <div className="w-20 h-8 rounded-full bg-slate-200/80 dark:bg-slate-800/80 animate-pulse" />
         </div>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 p-4 md:p-8 space-y-6 overflow-hidden flex flex-col justify-end pb-24">
-        <div className="flex gap-3 w-full max-w-md">
-          <Skeleton className="w-8 h-8 rounded-full shrink-0 mt-auto" />
-          <Skeleton className="h-16 w-full rounded-2xl rounded-bl-xs" />
+      {/* Messages Thread Skeleton with Gradient Shimmer */}
+      <div className="flex-1 p-4 md:p-8 space-y-5 overflow-hidden flex flex-col justify-end pb-28">
+        <div className="flex items-center justify-center my-4">
+          <div className="px-4 py-1 rounded-full bg-slate-200/50 dark:bg-slate-800/50 text-[11px] font-bold text-slate-400 animate-pulse">
+            Loading consultation history...
+          </div>
         </div>
-        <div className="flex gap-3 w-full max-w-sm ml-auto justify-end">
-          <Skeleton className="h-12 w-full rounded-2xl rounded-br-xs" />
+
+        {/* Incoming Bubble */}
+        <div className="flex gap-3 w-full max-w-sm sm:max-w-md">
+          <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 shrink-0 mt-auto animate-pulse" />
+          <div className="flex-1 space-y-2 p-4 rounded-2xl rounded-bl-xs bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 shadow-sm">
+            <div className="h-3.5 w-4/5 bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 dark:from-slate-800 dark:via-slate-700 dark:to-slate-800 rounded-md animate-pulse" />
+            <div className="h-3.5 w-3/5 bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 dark:from-slate-800 dark:via-slate-700 dark:to-slate-800 rounded-md animate-pulse" />
+          </div>
         </div>
-        <div className="flex gap-3 w-full max-w-lg">
-          <Skeleton className="w-8 h-8 rounded-full shrink-0 mt-auto" />
-          <Skeleton className="h-24 w-full rounded-2xl rounded-bl-xs" />
+
+        {/* Outgoing Bubble */}
+        <div className="flex gap-3 w-full max-w-xs sm:max-w-sm ml-auto justify-end">
+          <div className="flex-1 space-y-2 p-4 rounded-2xl rounded-br-xs bg-brand-600/20 border border-brand-500/20 shadow-sm">
+            <div className="h-3.5 w-full bg-brand-500/30 rounded-md animate-pulse" />
+            <div className="h-3.5 w-2/3 bg-brand-500/30 rounded-md animate-pulse" />
+          </div>
+        </div>
+
+        {/* Incoming Bubble 2 */}
+        <div className="flex gap-3 w-full max-w-md sm:max-w-lg">
+          <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 shrink-0 mt-auto animate-pulse" />
+          <div className="flex-1 space-y-2 p-4 rounded-2xl rounded-bl-xs bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 shadow-sm">
+            <div className="h-3.5 w-11/12 bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 dark:from-slate-800 dark:via-slate-700 dark:to-slate-800 rounded-md animate-pulse" />
+            <div className="h-3.5 w-3/4 bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 dark:from-slate-800 dark:via-slate-700 dark:to-slate-800 rounded-md animate-pulse" />
+          </div>
         </div>
       </div>
 
-      {/* Input */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 md:px-8 border-t border-slate-200/50 dark:border-slate-800/50 bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl flex gap-3 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
-        <Skeleton className="h-12 flex-1 rounded-full" />
-        <Skeleton className="w-12 h-12 rounded-full shrink-0" />
+      {/* Input Composer Skeleton */}
+      <div className="absolute bottom-0 left-0 right-0 p-4 md:px-8 border-t border-slate-200/60 dark:border-slate-800/60 bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl flex items-center gap-3 shadow-lg">
+        <div className="w-11 h-11 rounded-full bg-slate-200 dark:bg-slate-800 shrink-0 animate-pulse" />
+        <div className="h-12 flex-1 rounded-[28px] bg-slate-200/80 dark:bg-slate-800/80 animate-pulse" />
+        <div className="w-12 h-12 rounded-full bg-brand-600/30 shrink-0 animate-pulse" />
       </div>
     </div>
   );

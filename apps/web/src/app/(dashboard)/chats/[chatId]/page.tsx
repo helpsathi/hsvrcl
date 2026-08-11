@@ -107,6 +107,9 @@ export default function ChatRoomPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
+  const [isConnected, setIsConnected] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -152,17 +155,28 @@ export default function ChatRoomPage() {
         socketRef.current = io(socketUrl, {
           transports: ["websocket", "polling"],
           auth: { token: tokenData.token },
-          reconnectionAttempts: 5,
-          reconnectionDelay: 2000,
-          forceNew: true, // Crucial: prevents socket caching so disconnects don't swallow messages
+          reconnectionAttempts: 10,
+          reconnectionDelay: 1500,
+          forceNew: true,
         });
 
         if (socketRef.current.connected) {
+          setIsConnected(true);
           socketRef.current.emit("join_session", chatId);
         }
 
         socketRef.current.on("connect", () => {
+          setIsConnected(true);
+          setSendError(null);
           socketRef.current?.emit("join_session", chatId);
+        });
+
+        socketRef.current.on("disconnect", () => {
+          setIsConnected(false);
+        });
+
+        socketRef.current.on("connect_error", () => {
+          setIsConnected(false);
         });
 
         socketRef.current.on("receive_message", (message: Message) => {
@@ -198,6 +212,7 @@ export default function ChatRoomPage() {
         });
 
         socketRef.current.on("error", (msg: string) => {
+          setSendError(msg);
           setError(msg);
         });
 
@@ -263,25 +278,33 @@ export default function ChatRoomPage() {
 
   const handleSendMessage = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!newMessage.trim() || !user || !chatId || !socketRef.current) return;
+    const text = newMessage.trim();
+    if (!text || !user || !chatId) return;
+
+    if (!socketRef.current || !socketRef.current.connected) {
+      setSendError("Connecting to real-time server... Please wait a second and try again.");
+      return;
+    }
+
+    setSendError(null);
 
     if (editingMessageId) {
       socketRef.current.emit("edit_message", {
         sessionId: chatId,
         messageId: editingMessageId,
-        content: newMessage.trim(),
+        content: text,
       });
       setEditingMessageId(null);
       setNewMessage("");
       return;
     }
 
-    if (chat?.status !== "ACTIVE" && !chat?.subscriptionStatus) return;
+    if (chat?.status !== "ACTIVE" && !chat?.isSubscribed) return;
 
     socketRef.current.emit("send_message", {
       sessionId: chatId,
       senderId: user.id,
-      content: newMessage.trim(),
+      content: text,
     });
 
     setNewMessage("");
@@ -560,6 +583,25 @@ export default function ChatRoomPage() {
           )}
         </div>
       </div>
+
+      {!isConnected && chat.status === "ACTIVE" && (
+        <div className="bg-indigo-500/10 border-b border-indigo-500/20 text-indigo-600 dark:text-indigo-400 px-4 py-1.5 text-xs font-bold flex items-center justify-center gap-2 z-20 shrink-0">
+          <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+          <span>Connecting to real-time chat server...</span>
+        </div>
+      )}
+
+      {sendError && (
+        <div className="bg-rose-500/10 border-b border-rose-500/20 text-rose-600 dark:text-rose-400 px-4 py-2 text-xs font-bold flex items-center justify-between gap-2 z-20 shrink-0">
+          <div className="flex items-center gap-2">
+            <WarningCircle weight="fill" className="text-rose-500 text-sm shrink-0" />
+            <span>{sendError}</span>
+          </div>
+          <button onClick={() => setSendError(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white">
+            <X weight="bold" />
+          </button>
+        </div>
+      )}
 
       {isPrivate && chat.status === "ACTIVE" && (
         <div className="bg-amber-500/10 border-b border-amber-500/20 text-amber-300 px-4 py-1.5 text-xs font-bold flex items-center justify-center gap-2 z-20 shrink-0">

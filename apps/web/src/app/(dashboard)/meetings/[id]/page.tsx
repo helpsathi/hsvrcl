@@ -60,6 +60,7 @@ export default function MeetingRoomPage() {
       }
     } catch (err: any) {
       toast.error(err.message || "Failed to sync link");
+      throw err; // Rethrow so GoogleMeetRoom can display the inline error UI
     }
   };
 

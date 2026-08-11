@@ -9,25 +9,46 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Get notifications directly for this user OR role broadcasts
-    const notifications = await prisma.notification.findMany({
-      where: {
-        OR: [
-          { userId: session.userId },
-          { targetRole: "ALL" },
-          { targetRole: session.role },
-        ],
-      },
-      orderBy: { createdAt: "desc" },
-      take: 100,
-    });
+    const { searchParams } = new URL(req.url);
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "20", 10)));
+    const skip = (page - 1) * limit;
+
+    const whereClause = {
+      OR: [
+        { userId: session.userId },
+        { targetRole: "ALL" },
+        { targetRole: session.role },
+      ],
+    };
+
+    const [total, notifications] = await Promise.all([
+      prisma.notification.count({ where: whereClause }),
+      prisma.notification.findMany({
+        where: whereClause,
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+      }),
+    ]);
 
     const formatted = notifications.map((n) => ({
       ...n,
       isRead: n.userId ? n.isRead : n.readBy.includes(session.userId),
     }));
 
-    return NextResponse.json({ notifications: formatted });
+    const totalPages = Math.ceil(total / limit);
+
+    return NextResponse.json({
+      notifications: formatted,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages,
+        hasMore: page < totalPages,
+      },
+    });
   } catch (error: any) {
     console.error("GET /api/notifications error:", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
@@ -116,15 +137,27 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Support bulk clearing of already-read user notifications
-    await prisma.notification.deleteMany({
-      where: {
-        userId: session.userId,
-        isRead: true,
-      },
-    });
+    const { searchParams } = new URL(req.url);
+    const deleteAll = searchParams.get("all") === "true";
 
-    return NextResponse.json({ success: true });
+    if (deleteAll) {
+      // Delete ALL notifications for this user
+      await prisma.notification.deleteMany({
+        where: {
+          userId: session.userId,
+        },
+      });
+    } else {
+      // Delete only read notifications
+      await prisma.notification.deleteMany({
+        where: {
+          userId: session.userId,
+          isRead: true,
+        },
+      });
+    }
+
+    return NextResponse.json({ success: true, deleteAll });
   } catch (error: any) {
     console.error("DELETE /api/notifications error:", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });

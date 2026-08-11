@@ -26,27 +26,48 @@ function NotificationsContent() {
   const [viewMode, setViewMode] = useState<"FEED" | "SETTINGS">(initialView);
   const [notifications, setNotifications] = useState<NotifRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [activeTab, setActiveTab] = useState<"ALL" | "UNREAD" | "CHATS" | "BOOKINGS" | "PAYMENTS" | "REVIEWS">("ALL");
   const [actionLoading, setActionLoading] = useState(false);
 
-  const fetchNotifications = async () => {
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
+
+  const fetchNotifications = async (pageNum: number = 1, append: boolean = false) => {
     try {
-      setLoading(true);
-      const res = await fetch("/api/notifications");
+      if (append) setLoadingMore(true);
+      else setLoading(true);
+
+      const res = await fetch(`/api/notifications?page=${pageNum}&limit=15`);
       if (res.ok) {
         const data = await res.json();
-        setNotifications(data.notifications || []);
+        const newItems = data.notifications || [];
+        setNotifications((prev) => (append ? [...prev, ...newItems] : newItems));
+        if (data.pagination) {
+          setHasMore(data.pagination.hasMore);
+          setTotalCount(data.pagination.total);
+        }
       }
     } catch (e) {
       console.error("Failed to load notifications:", e);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
   useEffect(() => {
-    fetchNotifications();
+    fetchNotifications(1, false);
   }, []);
+
+  const handleLoadMore = () => {
+    if (!hasMore || loadingMore) return;
+    const nextPage = page + 1;
+    setPage(nextPage);
+    fetchNotifications(nextPage, true);
+  };
 
   const handleMarkAsRead = async (id: string) => {
     setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)));
@@ -84,6 +105,21 @@ function NotificationsContent() {
       await fetch("/api/notifications", { method: "DELETE" });
     } catch (e) {
       console.error("Clear read failed:", e);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleClearAll = async () => {
+    if (!confirm("Are you sure you want to delete ALL notifications?")) return;
+    setActionLoading(true);
+    setNotifications([]);
+    setTotalCount(0);
+    setHasMore(false);
+    try {
+      await fetch("/api/notifications?all=true", { method: "DELETE" });
+    } catch (e) {
+      console.error("Clear all failed:", e);
     } finally {
       setActionLoading(false);
     }
@@ -130,31 +166,31 @@ function NotificationsContent() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-8 px-4 sm:px-6 lg:px-8 transition-colors">
-      <div className="max-w-5xl mx-auto space-y-8">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-8 px-4 sm:px-6 lg:px-8 transition-colors pb-28 md:pb-12">
+      <div className="max-w-5xl mx-auto space-y-6">
         {/* Header section */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Notification & Alerts Hub</h1>
+              <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">Notification Hub</h1>
               {viewMode === "FEED" && unreadCount > 0 && (
                 <span className="px-3 py-0.5 rounded-full text-xs font-black bg-brand-main text-white animate-pulse">
                   {unreadCount} new
                 </span>
               )}
             </div>
-            <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
-              Manage your message alerts, booking updates, and device push preferences in one place.
+            <p className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
+              Manage your message alerts, booking updates, and device push preferences.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
             <button
               onClick={() => setViewMode(viewMode === "FEED" ? "SETTINGS" : "FEED")}
-              className={`inline-flex items-center gap-2 px-4 py-2.5 font-extrabold rounded-xl text-xs transition shadow-sm ${
+              className={`inline-flex items-center gap-2 px-3.5 py-2 font-extrabold rounded-xl text-xs transition shadow-sm ${
                 viewMode === "SETTINGS"
-                  ? "bg-brand-main text-slate-950 hover:bg-brand-400 shadow-brand-main/20"
-                  : "bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700"
+                  ? "bg-brand-main text-slate-950 hover:bg-brand-400"
+                  : "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700"
               }`}
             >
               {viewMode === "SETTINGS" ? (
@@ -163,7 +199,7 @@ function NotificationsContent() {
                 </>
               ) : (
                 <>
-                  <Sliders weight="fill" className="w-4 h-4 text-brand-main dark:text-amber-400" /> Notification Settings
+                  <Sliders weight="fill" className="w-4 h-4 text-brand-main dark:text-amber-400" /> Settings
                 </>
               )}
             </button>
@@ -172,19 +208,28 @@ function NotificationsContent() {
               <button
                 onClick={handleMarkAllRead}
                 disabled={actionLoading}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl text-xs transition shadow-sm shadow-emerald-500/20 disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl text-xs transition shadow-sm disabled:opacity-50"
               >
-                <CheckCircle weight="fill" className="w-4 h-4" /> Mark All as Read
+                <CheckCircle weight="fill" className="w-4 h-4" /> Mark Read
               </button>
             )}
-            {viewMode === "FEED" && (
-              <button
-                onClick={handleClearRead}
-                disabled={actionLoading || notifications.length === 0}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs transition disabled:opacity-50"
-              >
-                <Trash weight="bold" className="w-4 h-4" /> Clear Read History
-              </button>
+            {viewMode === "FEED" && notifications.length > 0 && (
+              <>
+                <button
+                  onClick={handleClearRead}
+                  disabled={actionLoading}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs transition disabled:opacity-50"
+                >
+                  <Trash weight="bold" className="w-3.5 h-3.5" /> Clear Read
+                </button>
+                <button
+                  onClick={handleClearAll}
+                  disabled={actionLoading}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/20 font-bold rounded-xl text-xs transition disabled:opacity-50"
+                >
+                  <Trash weight="fill" className="w-3.5 h-3.5 text-rose-500" /> Delete All
+                </button>
+              </>
             )}
           </div>
         </div>
@@ -196,22 +241,22 @@ function NotificationsContent() {
           </div>
         ) : (
           <>
-            {/* Filter Navigation Tabs */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none border-b border-slate-200 dark:border-slate-800">
+            {/* Filter Navigation Tabs with smooth touch scrolling */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none border-b border-slate-200 dark:border-slate-800 -mx-4 px-4 sm:mx-0 sm:px-0">
               {[
-                { id: "ALL", label: "All Notifications", badge: notifications.length },
+                { id: "ALL", label: "All", badge: totalCount || notifications.length },
                 { id: "UNREAD", label: "Unread", badge: unreadCount },
-                { id: "CHATS", label: "💬 Chats & Calls" },
-                { id: "BOOKINGS", label: "📅 Bookings & Proposals" },
-                { id: "PAYMENTS", label: "💳 Payments & Payouts" },
-                { id: "REVIEWS", label: "⭐ Reviews & Other" },
+                { id: "CHATS", label: "💬 Chats" },
+                { id: "BOOKINGS", label: "📅 Bookings" },
+                { id: "PAYMENTS", label: "💳 Payments" },
+                { id: "REVIEWS", label: "⭐ Reviews" },
               ].map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as any)}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 shrink-0 ${
+                  className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 ${
                     activeTab === tab.id
-                      ? "bg-brand-main text-slate-950 font-black shadow-md shadow-brand-main/20"
+                      ? "bg-brand-main text-slate-950 font-black shadow-md"
                       : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/60 dark:border-slate-800"
                   }`}
                 >
@@ -311,6 +356,25 @@ function NotificationsContent() {
                     </div>
                   );
                 })}
+              </div>
+            )}
+
+            {hasMore && (
+              <div className="flex justify-center pt-4 pb-2">
+                <button
+                  onClick={handleLoadMore}
+                  disabled={loadingMore}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-2xl text-xs font-black transition shadow-sm disabled:opacity-50"
+                >
+                  {loadingMore ? (
+                    <>
+                      <Spinner className="w-4 h-4 animate-spin text-brand-main" />
+                      <span>Loading more...</span>
+                    </>
+                  ) : (
+                    <span>Load Earlier Notifications</span>
+                  )}
+                </button>
               </div>
             )}
           </>
