@@ -252,7 +252,7 @@ export function GlobalChatNotification() {
         <div className="pointer-events-auto bg-slate-900/95 dark:bg-slate-800/95 text-white backdrop-blur-xl border border-slate-700 shadow-2xl rounded-2xl p-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
           <div className="flex items-start justify-between gap-3">
             <div className="w-10 h-10 rounded-full bg-brand-main/20 flex items-center justify-center text-brand-main shrink-0">
-              <Bell weight="duotone" className="w-6 h-6 animate-pulse" />
+              <Bell className="w-6 h-6 animate-pulse" />
             </div>
             <div className="flex-1 text-xs">
               <p className="font-bold text-sm text-white">Enable Phone & PC Alerts</p>
@@ -275,7 +275,7 @@ export function GlobalChatNotification() {
               </div>
             </div>
             <button onClick={handleDismissPrompt} className="text-slate-400 hover:text-white p-1">
-              <X weight="bold" className="w-4 h-4" />
+              <X className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -302,7 +302,7 @@ export function GlobalChatNotification() {
                   }}
                   className="absolute top-2.5 right-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-white p-1"
                 >
-                  <X weight="bold" className="w-3.5 h-3.5" />
+                  <X className="w-3.5 h-3.5" />
                 </button>
 
                 <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 shadow-sm ${style.bg}`}>
@@ -327,7 +327,7 @@ export function GlobalChatNotification() {
                   {notif.link && (
                     <div className="mt-2 flex items-center gap-1 text-[11px] font-bold text-brand-main group-hover:underline">
                       <span>View details</span>
-                      <ArrowRight weight="bold" className="w-3 h-3" />
+                      <ArrowRight className="w-3 h-3" />
                     </div>
                   )}
                 </div>

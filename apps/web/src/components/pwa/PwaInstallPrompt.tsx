@@ -128,7 +128,7 @@ export function PwaInstallPrompt() {
           aria-label="Close install dialog"
           title="Add Later"
         >
-          <X weight="bold" className="w-4 h-4" />
+          <X className="w-4 h-4" />
         </button>
 
         <div className="flex items-start gap-3.5 pr-6">
