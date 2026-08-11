@@ -68,22 +68,22 @@ export default function PaymentHistoryPage() {
   });
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 pb-12 px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6">
+    <div className="w-full max-w-5xl mx-auto space-y-6 sm:space-y-8 pb-12 px-3.5 sm:px-6 lg:px-8 pt-3 sm:pt-6 overflow-x-hidden">
       {/* Header */}
       <div className="space-y-2">
         <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 text-xs font-bold uppercase tracking-wider">
           <Receipt weight="fill" /> Financial Transactions
         </div>
-        <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
           Payment History
         </h1>
-        <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm">
+        <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm leading-relaxed wrap-break-word">
           View your complete transaction history across wallet recharges, mentor subscriptions, and pay-per-minute sessions.
         </p>
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
+      <div className="flex items-center justify-between gap-2.5 sm:gap-4 border-b border-slate-200 dark:border-slate-800 pb-4 w-full min-w-0">
         <div className="flex flex-1 min-w-0 rounded-xl bg-slate-100 dark:bg-slate-800 p-1 overflow-x-auto whitespace-nowrap scrollbar-none">
           {[
             { label: "All Records", value: "ALL" },
@@ -94,7 +94,7 @@ export default function PaymentHistoryPage() {
             <button
               key={tab.value}
               onClick={() => { setFilter(tab.value); setPage(1); }}
-              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+              className={`px-3 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all shrink-0 ${
                 filter === tab.value
                   ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
@@ -116,29 +116,34 @@ export default function PaymentHistoryPage() {
 
       {/* Transaction Feed */}
       {loading ? (
-        <div className="space-y-3">
+        <div className="space-y-3 w-full">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-20 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 animate-pulse" />
+            <div key={i} className="h-20 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 animate-pulse w-full" />
           ))}
         </div>
       ) : filteredHistory.length === 0 ? (
-        <div className="text-center py-16 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-8 space-y-3">
+        <div className="text-center py-16 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-8 space-y-3 w-full">
           <Receipt className="mx-auto text-4xl text-slate-400" />
           <h3 className="font-bold text-lg text-slate-800 dark:text-slate-200">No transactions found</h3>
           <p className="text-xs text-slate-500">There are no records matching your current filter on this page.</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-3 w-full">
           {filteredHistory.map((tx) => {
-            const isCredit = tx.type === "WALLET_LEDGER" && tx.purpose?.includes("CREDIT");
+            const isCredit = 
+              (tx.type === "WALLET_LEDGER" && (tx.purpose?.includes("CREDIT") || tx.purpose?.includes("RECHARGE"))) ||
+              tx.purpose === "WALLET_RECHARGE" ||
+              tx.purpose?.toLowerCase().includes("recharge") ||
+              tx.purpose?.toLowerCase().includes("credit");
+
             return (
               <div
                 key={tx.id}
-                className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-slate-300 dark:hover:border-slate-700 transition"
+                className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 hover:border-slate-300 dark:hover:border-slate-700 transition w-full min-w-0 overflow-hidden"
               >
-                <div className="flex items-center gap-4">
+                <div className="flex items-start sm:items-center gap-3 sm:gap-4 min-w-0 flex-1">
                   <div
-                    className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0 font-bold ${
+                    className={`w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center text-lg sm:text-xl shrink-0 font-bold mt-0.5 sm:mt-0 ${
                       isCredit
                         ? "bg-emerald-50 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
                         : tx.type === "SUBSCRIPTION_CHARGE"
@@ -155,10 +160,10 @@ export default function PaymentHistoryPage() {
                     )}
                   </div>
 
-                  <div className="space-y-1">
-                    <div className="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-                      {tx.purpose?.replace(/_/g, " ") || tx.type}
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-extrabold uppercase ${
+                  <div className="space-y-1 min-w-0 flex-1">
+                    <div className="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white flex flex-wrap items-center gap-1.5 sm:gap-2">
+                      <span className="truncate max-w-full">{tx.purpose?.replace(/_/g, " ") || tx.type}</span>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-extrabold uppercase shrink-0 ${
                         tx.status === "SUCCESS" || tx.status === "ACTIVE"
                           ? "bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300"
                           : tx.status === "FAILED"
@@ -169,25 +174,28 @@ export default function PaymentHistoryPage() {
                       </span>
                     </div>
 
-                    <div className="text-xs text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-3">
-                      <span>{new Date(tx.date).toLocaleDateString()} at {new Date(tx.date).toLocaleTimeString()}</span>
+                    <div className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-2 sm:gap-3">
+                      <span className="shrink-0">{new Date(tx.date).toLocaleDateString("en-IN", { day: "2-digit", month: "2-digit", year: "numeric" })} at {new Date(tx.date).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</span>
                       {tx.reference && (
-                        <span className="font-mono text-[11px] bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-600 dark:text-slate-300">
+                        <span className="font-mono text-[10px] sm:text-[11px] bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-600 dark:text-slate-300 truncate max-w-[150px] sm:max-w-none">
                           Ref: {tx.reference.slice(0, 16)}
                         </span>
                       )}
                     </div>
                     {tx.description && (
-                      <p className="text-[11px] text-slate-500 italic">{tx.description}</p>
+                      <p className="text-[11px] text-slate-500 italic truncate max-w-full">{tx.description}</p>
                     )}
                   </div>
                 </div>
 
-                <div className="text-left sm:text-right shrink-0">
-                  <div className={`text-lg font-black ${isCredit ? "text-emerald-600 dark:text-emerald-400" : "text-slate-900 dark:text-white"}`}>
-                    {isCredit ? "+" : "-"}₹{tx.amount.toFixed(2)}
+                <div className="flex items-center justify-between sm:block text-left sm:text-right shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-slate-800/80">
+                  <span className="sm:hidden text-xs font-semibold text-slate-400">Amount</span>
+                  <div>
+                    <div className={`text-base sm:text-lg font-black ${isCredit ? "text-emerald-600 dark:text-emerald-400" : "text-slate-900 dark:text-white"}`}>
+                      {isCredit ? "+" : "-"}₹{tx.amount.toFixed(2)}
+                    </div>
+                    <span className="text-[9px] sm:text-[10px] text-slate-400 uppercase font-semibold block text-right sm:text-right">INR</span>
                   </div>
-                  <span className="text-[10px] text-slate-400 uppercase font-semibold">INR</span>
                 </div>
               </div>
             );
@@ -197,7 +205,7 @@ export default function PaymentHistoryPage() {
 
       {/* Pagination Controls */}
       {!loading && totalPages > 1 && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-6 border-t border-slate-200 dark:border-slate-800">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-6 border-t border-slate-200 dark:border-slate-800 w-full">
           <span className="text-xs text-slate-500 font-medium">
             Page {page} of {totalPages} ({totalRecords} records)
           </span>
