@@ -210,7 +210,7 @@ export function MentorDashboardSkeleton() {
 
 export function MyMentorsSkeleton() {
   return (
-    <div className="w-full min-h-full bg-transparent py-8 px-4 sm:px-6 lg:px-8 pb-28 animate-in fade-in transition-colors overflow-hidden">
+    <div className="w-full min-h-full bg-transparent py-8 px-4 sm:px-6 lg:px-8 pb-28 animate-in fade-in transition-colors">
       <div className="max-w-5xl mx-auto space-y-8">
         <div>
           <Skeleton className="h-8 w-48 sm:w-64 rounded-2xl mb-2" />
@@ -218,12 +218,12 @@ export function MyMentorsSkeleton() {
         </div>
         <div className="grid gap-4">
           {[1, 2].map((i) => (
-            <div key={i} className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-4 sm:p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div key={i} className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-4 sm:p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto flex-1 min-w-0">
                 <Skeleton className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl shrink-0" />
                 <div className="space-y-2 flex-1 min-w-0">
-                  <Skeleton className="h-5 w-2/3 sm:w-48 rounded-xl" />
-                  <Skeleton className="h-3.5 w-full sm:w-60 rounded-lg" />
+                  <Skeleton className="h-5 w-3/4 sm:w-48 rounded-xl" />
+                  <Skeleton className="h-3.5 w-11/12 sm:w-60 rounded-lg" />
                 </div>
               </div>
               <Skeleton className="h-10 w-full sm:w-32 rounded-xl shrink-0" />

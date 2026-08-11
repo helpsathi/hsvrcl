@@ -245,7 +245,7 @@ export default function AdminPaymentsPage() {
                     </td>
                     <td className="px-6 py-4">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                        {p.purpose.replace(/_/g, " ")}
+                        {p.purpose ? p.purpose.replace(/_/g, " ") : "Unknown"}
                       </span>
                     </td>
                     <td className="px-6 py-4 font-black text-slate-900 dark:text-white">

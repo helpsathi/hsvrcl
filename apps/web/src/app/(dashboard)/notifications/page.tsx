@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { NotificationPreferences } from "@/components/notifications/NotificationPreferences";
-import { Bell, CalendarCheck, Wallet, Star, ChatCircleDots, CheckCircle, Trash, ArrowRight, Spinner, ShieldCheck, Sliders, ArrowLeft } from "@phosphor-icons/react";
+import { Bell, CalendarCheck, Wallet, Star, MessageCircle, CheckCircle, Trash2, ArrowRight, Loader2, ShieldCheck, Sliders, ArrowLeft } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 interface NotifRecord {
@@ -150,18 +150,18 @@ function NotificationsContent() {
       case "BOOKING":
       case "PROPOSAL_ACCEPTED":
       case "GROUP_MEETING":
-        return { icon: <CalendarCheck weight="fill" className="w-5 h-5 text-emerald-500" />, bg: "bg-emerald-500/10 border-emerald-500/20" };
+        return { icon: <CalendarCheck className="w-5 h-5 text-emerald-500" />, bg: "bg-emerald-500/10 border-emerald-500/20" };
       case "PAYMENT":
       case "PAYOUT":
       case "WALLET":
-        return { icon: <Wallet weight="fill" className="w-5 h-5 text-blue-500" />, bg: "bg-blue-500/10 border-blue-500/20" };
+        return { icon: <Wallet className="w-5 h-5 text-blue-500" />, bg: "bg-blue-500/10 border-blue-500/20" };
       case "REVIEW":
-        return { icon: <Star weight="fill" className="w-5 h-5 text-amber-500" />, bg: "bg-amber-500/10 border-amber-500/20" };
+        return { icon: <Star className="w-5 h-5 text-amber-500" />, bg: "bg-amber-500/10 border-amber-500/20" };
       case "CHAT_MESSAGE":
       case "CHAT":
-        return { icon: <ChatCircleDots weight="fill" className="w-5 h-5 text-indigo-500" />, bg: "bg-indigo-500/10 border-indigo-500/20" };
+        return { icon: <MessageCircle className="w-5 h-5 text-indigo-500" />, bg: "bg-indigo-500/10 border-indigo-500/20" };
       default:
-        return { icon: <Bell weight="fill" className="w-5 h-5 text-brand-main" />, bg: "bg-brand-main/10 border-brand-main/20" };
+        return { icon: <Bell className="w-5 h-5 text-brand-main" />, bg: "bg-brand-main/10 border-brand-main/20" };
     }
   };
 
@@ -195,11 +195,11 @@ function NotificationsContent() {
             >
               {viewMode === "SETTINGS" ? (
                 <>
-                  <ArrowLeft weight="bold" className="w-4 h-4" /> Back to Notifications
+                  <ArrowLeft className="w-4 h-4" /> Back to Notifications
                 </>
               ) : (
                 <>
-                  <Sliders weight="fill" className="w-4 h-4 text-brand-main dark:text-amber-400" /> Settings
+                  <Sliders className="w-4 h-4 text-brand-main dark:text-amber-400" /> Settings
                 </>
               )}
             </button>
@@ -210,7 +210,7 @@ function NotificationsContent() {
                 disabled={actionLoading}
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl text-xs transition shadow-sm disabled:opacity-50"
               >
-                <CheckCircle weight="fill" className="w-4 h-4" /> Mark Read
+                <CheckCircle className="w-4 h-4" /> Mark Read
               </button>
             )}
             {viewMode === "FEED" && notifications.length > 0 && (
@@ -220,14 +220,14 @@ function NotificationsContent() {
                   disabled={actionLoading}
                   className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs transition disabled:opacity-50"
                 >
-                  <Trash weight="bold" className="w-3.5 h-3.5" /> Clear Read
+                  <Trash2 className="w-3.5 h-3.5" /> Clear Read
                 </button>
                 <button
                   onClick={handleClearAll}
                   disabled={actionLoading}
                   className="inline-flex items-center gap-1.5 px-3 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/20 font-bold rounded-xl text-xs transition disabled:opacity-50"
                 >
-                  <Trash weight="fill" className="w-3.5 h-3.5 text-rose-500" /> Delete All
+                  <Trash2 className="w-3.5 h-3.5 text-rose-500" /> Delete All
                 </button>
               </>
             )}
@@ -273,13 +273,13 @@ function NotificationsContent() {
             {/* Notifications Roster */}
             {loading ? (
               <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-                <Spinner className="w-8 h-8 animate-spin mb-3 text-brand-main" />
+                <Loader2 className="w-8 h-8 animate-spin mb-3 text-brand-main" />
                 <p className="font-bold text-sm">Loading your activity history...</p>
               </div>
             ) : filteredList.length === 0 ? (
               <div className="bg-white dark:bg-slate-900/50 rounded-3xl border border-slate-200 dark:border-slate-800 p-12 text-center max-w-lg mx-auto shadow-sm">
                 <div className="w-16 h-16 rounded-3xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 mx-auto mb-4">
-                  <Bell weight="duotone" className="w-8 h-8" />
+                  <Bell className="w-8 h-8" />
                 </div>
                 <h3 className="font-extrabold text-lg text-slate-900 dark:text-white">No notifications in this view</h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 mb-6">
@@ -289,7 +289,7 @@ function NotificationsContent() {
                   onClick={() => setViewMode("SETTINGS")}
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-extrabold transition shadow-sm border border-slate-200 dark:border-slate-700"
                 >
-                  <Sliders weight="fill" className="w-4 h-4 text-brand-main" /> Check Notification & Push Settings
+                  <Sliders className="w-4 h-4 text-brand-main" /> Check Notification & Push Settings
                 </button>
               </div>
             ) : (
@@ -314,14 +314,14 @@ function NotificationsContent() {
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-2">
                           <div className="flex items-center gap-2 min-w-0">
                             <h4 className="font-black text-sm text-slate-900 dark:text-white truncate">{notif.title}</h4>
                             {!notif.isRead && (
                               <span className="w-2 h-2 rounded-full bg-brand-main animate-ping shrink-0" />
                             )}
                           </div>
-                          <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 shrink-0">
+                          <span className="text-[10px] sm:text-xs font-semibold text-slate-400 dark:text-slate-500 shrink-0">
                             {new Date(notif.createdAt).toLocaleDateString("en-IN", {
                               month: "short",
                               day: "numeric",
@@ -336,7 +336,7 @@ function NotificationsContent() {
                         {notif.link && (
                           <div className="mt-2.5 inline-flex items-center gap-1.5 text-xs font-bold text-brand-main hover:underline">
                             <span>View Details</span>
-                            <ArrowRight weight="bold" className="w-3.5 h-3.5" />
+                            <ArrowRight className="w-3.5 h-3.5" />
                           </div>
                         )}
                       </div>
@@ -350,7 +350,7 @@ function NotificationsContent() {
                           className="text-slate-400 hover:text-emerald-500 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition shrink-0"
                           title="Mark as Read"
                         >
-                          <CheckCircle weight="fill" className="w-5 h-5" />
+                          <CheckCircle className="w-5 h-5" />
                         </button>
                       )}
                     </div>
@@ -368,7 +368,7 @@ function NotificationsContent() {
                 >
                   {loadingMore ? (
                     <>
-                      <Spinner className="w-4 h-4 animate-spin text-brand-main" />
+                      <Loader2 className="w-4 h-4 animate-spin text-brand-main" />
                       <span>Loading more...</span>
                     </>
                   ) : (
@@ -388,7 +388,7 @@ export default function NotificationsPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center py-20 text-slate-400">
-        <Spinner className="w-8 h-8 animate-spin mb-3 text-brand-main" />
+        <Loader2 className="w-8 h-8 animate-spin mb-3 text-brand-main" />
         <p className="font-bold text-sm">Loading notifications hub...</p>
       </div>
     }>

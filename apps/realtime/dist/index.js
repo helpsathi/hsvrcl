@@ -19,7 +19,10 @@ if (process.env.NODE_ENV === "production" && (!secretKey || secretKey === "fallb
 }
 const JWT_SECRET = new TextEncoder().encode(secretKey || "dev_secret_only_for_local_testing_do_not_use_in_prod");
 const app = (0, express_1.default)();
-const frontendOrigin = process.env.FRONTEND_URL || 'http://localhost:3000';
+const frontendOriginRaw = process.env.FRONTEND_URL || 'http://localhost:3000';
+const frontendOrigin = frontendOriginRaw.includes(',')
+    ? frontendOriginRaw.split(',').map(url => url.trim())
+    : frontendOriginRaw;
 app.use((0, cors_1.default)({ origin: frontendOrigin }));
 app.use(express_1.default.json());
 const httpServer = (0, http_1.createServer)(app);
@@ -226,8 +229,16 @@ io.on('connection', (socket) => {
                     isFreeTrial: session.isFreeTrial,
                 });
             }
-            // Re-evaluate duration and auto-end on EVERY message (in case server restarted and lost timer)
-            if (firstMsgTime && session.perMinuteRate > 0) {
+            // Check if student has active subscription
+            const activeSub = await prisma.subscription.findFirst({
+                where: {
+                    studentId: session.studentId,
+                    isActive: true,
+                    endDate: { gt: new Date() },
+                },
+            });
+            // Re-evaluate duration and auto-end on EVERY message (only for pay-per-minute non-subscribed calls)
+            if (firstMsgTime && session.perMinuteRate > 0 && !activeSub) {
                 const studentWallet = await prisma.wallet.findUnique({
                     where: { userId: session.studentId },
                 });
@@ -510,10 +521,54 @@ const schedulerInterval = setInterval(async () => {
         console.error("Error in background interval scheduler:", err);
     }
 }, 5 * 60 * 1000); // Run every 5 minutes
+// Hourly Cron Substitute (Bypasses Vercel free-tier cron limits)
+// Pings the web API to process automated payments and refunds every hour
+const hourlySyncInterval = setInterval(async () => {
+    try {
+        const webAppUrl = Array.isArray(frontendOrigin)
+            ? frontendOrigin.find(url => url.includes('helpsathi.com')) || frontendOrigin[0]
+            : frontendOrigin;
+        if (webAppUrl && process.env.INTERNAL_API_SECRET) {
+            console.log(`[Hourly Cron] Triggering payment/refund sync at ${webAppUrl}...`);
+            await fetch(`${webAppUrl}/api/scheduled-calls/sync`, {
+                method: 'POST',
+                headers: {
+                    'x-internal-secret': process.env.INTERNAL_API_SECRET
+                }
+            });
+        }
+    }
+    catch (err) {
+        console.error("Error triggering hourly sync:", err);
+    }
+}, 60 * 60 * 1000); // Run every 60 minutes
+// Daily Cron Substitute
+// Pings the web API to process subscription cleanups once a day
+const dailyCleanupInterval = setInterval(async () => {
+    try {
+        const webAppUrl = Array.isArray(frontendOrigin)
+            ? frontendOrigin.find(url => url.includes('helpsathi.com')) || frontendOrigin[0]
+            : frontendOrigin;
+        if (webAppUrl && process.env.INTERNAL_API_SECRET) {
+            console.log(`[Daily Cron] Triggering subscription cleanup at ${webAppUrl}...`);
+            await fetch(`${webAppUrl}/api/subscriptions/cleanup`, {
+                method: 'POST',
+                headers: {
+                    'x-internal-secret': process.env.INTERNAL_API_SECRET
+                }
+            });
+        }
+    }
+    catch (err) {
+        console.error("Error triggering daily cleanup:", err);
+    }
+}, 24 * 60 * 60 * 1000); // Run every 24 hours
 // L5: Graceful Shutdown handling
 const gracefulShutdown = (signal) => {
     console.log(`${signal} received: closing HTTP and Socket servers gracefully...`);
     clearInterval(schedulerInterval);
+    clearInterval(hourlySyncInterval);
+    clearInterval(dailyCleanupInterval);
     io.emit("server_shutdown", { message: "Server is restarting for updates. Please reconnect shortly." });
     io.close(() => {
         console.log("Socket.io closed.");
