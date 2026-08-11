@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import { AnimatedList } from "@/components/magicui/animated-list";
-import { ChatCircleDots, X, Bell, CalendarCheck, Wallet, Star, ArrowRight } from "@phosphor-icons/react";
+import { MessageCircle, X, Bell, CalendarCheck, Wallet, Star, ArrowRight } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { io, Socket } from "socket.io-client";
 import { useAuth } from "@/components/providers/AuthProvider";
@@ -230,16 +230,16 @@ export function GlobalChatNotification() {
     switch (type) {
       case "BOOKING":
       case "PROPOSAL_ACCEPTED":
-        return { icon: <CalendarCheck weight="fill" className="w-4 h-4 text-emerald-500" />, bg: "bg-emerald-500/10 border-emerald-500/20" };
+        return { icon: <CalendarCheck className="w-4 h-4 text-emerald-500" />, bg: "bg-emerald-500/10 border-emerald-500/20" };
       case "PAYMENT":
-        return { icon: <Wallet weight="fill" className="w-4 h-4 text-blue-500" />, bg: "bg-blue-500/10 border-blue-500/20" };
+        return { icon: <Wallet className="w-4 h-4 fill-blue-500 text-blue-500" />, bg: "bg-blue-500/10 border-blue-500/20" };
       case "REVIEW":
-        return { icon: <Star weight="fill" className="w-4 h-4 text-amber-500" />, bg: "bg-amber-500/10 border-amber-500/20" };
+        return { icon: <Star className="w-4 h-4 fill-amber-500 text-amber-500" />, bg: "bg-amber-500/10 border-amber-500/20" };
       case "CHAT_MESSAGE":
       case "CHAT":
-        return { icon: <ChatCircleDots weight="fill" className="w-4 h-4 text-indigo-500" />, bg: "bg-indigo-500/10 border-indigo-500/20" };
+        return { icon: <MessageCircle className="w-4 h-4 fill-indigo-500 text-indigo-500" />, bg: "bg-indigo-500/10 border-indigo-500/20" };
       default:
-        return { icon: <Bell weight="fill" className="w-4 h-4 text-brand-main" />, bg: "bg-brand-main/10 border-brand-main/20" };
+        return { icon: <Bell className="w-4 h-4 fill-brand-main text-brand-main" />, bg: "bg-brand-main/10 border-brand-main/20" };
     }
   };
 

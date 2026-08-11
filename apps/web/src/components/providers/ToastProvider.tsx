@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useCallback } from "react";
-import { CheckCircle, XCircle, WarningCircle, Info, X } from "@phosphor-icons/react";
+import { CheckCircle, XCircle, AlertCircle, Info, X } from "lucide-react";
 
 export type ToastType = "success" | "error" | "warning" | "info";
 
@@ -87,10 +87,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               }`}
             >
               <div className="shrink-0 mt-0.5 text-lg">
-                {isSuccess && <CheckCircle weight="fill" className="text-emerald-600 dark:text-emerald-400" />}
-                {isError && <XCircle weight="fill" className="text-rose-600 dark:text-rose-400" />}
-                {isWarning && <WarningCircle weight="fill" className="text-amber-600 dark:text-amber-400" />}
-                {isInfo && <Info weight="fill" className="text-blue-400" />}
+                {isSuccess && <CheckCircle className="fill-emerald-600 text-emerald-600 dark:fill-emerald-400 dark:text-emerald-400" />}
+                {isError && <XCircle className="fill-rose-600 text-rose-600 dark:fill-rose-400 dark:text-rose-400" />}
+                {isWarning && <AlertCircle className="fill-amber-600 text-amber-600 dark:fill-amber-400 dark:text-amber-400" />}
+                {isInfo && <Info className="fill-blue-400 text-blue-400" />}
               </div>
 
               <div className="flex-1 min-w-0 text-xs sm:text-sm font-bold leading-snug">
@@ -101,7 +101,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 onClick={() => removeToast(toast.id)}
                 className="shrink-0 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5"
               >
-                <X weight="bold" className="text-sm" />
+                <X className="text-sm" />
               </button>
             </div>
           );
