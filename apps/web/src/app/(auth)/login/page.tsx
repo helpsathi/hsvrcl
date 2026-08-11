@@ -2,11 +2,11 @@
 
 import { GoogleLogin } from "@react-oauth/google";
 import { useAuth } from "@/components/providers/AuthProvider";
-import { ArrowLeft, WarningCircle } from "@phosphor-icons/react";
+import { ArrowLeft, WarningCircle, ShieldCheck } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useEffect } from "react";
-import { Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { BrandLogo } from "@/components/ui/BrandLogo";
 
 const loadingMessages = [
   "Authenticating your credentials...",
@@ -70,7 +70,6 @@ function LoginContent() {
     const errorParam = searchParams?.get("error");
     if (errorParam === "session_expired") {
       setError("Your session has expired. Please log in again.");
-      // Forcefully clear the zombie cookie in the browser to prevent Next.js client-side router loops
       fetch("/api/auth/logout", { method: "POST" }).catch(console.error);
     } else if (errorParam === "unauthorized") {
       setError("You are not authorized to view that page.");
@@ -96,103 +95,93 @@ function LoginContent() {
   }
 
   return (
-    <div className="w-full min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4 sm:p-8 font-sans relative overflow-hidden transition-colors duration-300">
+    <div className="w-full min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4 sm:p-6 font-sans relative overflow-hidden transition-colors duration-300">
       
-      {/* Background glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-emerald-500/10 blur-[120px] rounded-full pointer-events-none"></div>
+      {/* Ambient background glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-emerald-500/10 dark:bg-emerald-500/15 blur-[140px] rounded-full pointer-events-none"></div>
 
-      <Link href="/" className="absolute top-6 left-6 p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors z-10">
+      {/* Back button */}
+      <Link 
+        href="/" 
+        className="absolute top-6 left-6 p-2.5 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-white dark:hover:bg-slate-900 border border-transparent hover:border-slate-200 dark:hover:border-slate-800 rounded-2xl transition-all z-20 shadow-xs"
+        aria-label="Back to home"
+      >
         <ArrowLeft className="text-xl" />
       </Link>
 
-      <div className="w-full max-w-4xl bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] dark:shadow-none border border-slate-200 dark:border-slate-800 relative z-10 flex flex-col md:flex-row overflow-hidden animate-slide-up">
+      {/* Main Single Centered Card */}
+      <div className="w-full max-w-md bg-white dark:bg-slate-900/90 backdrop-blur-xl rounded-[2.5rem] shadow-[0_20px_50px_-10px_rgba(0,0,0,0.08)] dark:shadow-none border border-slate-200/80 dark:border-slate-800 p-8 sm:p-10 relative z-10 flex flex-col items-center animate-slide-up text-center">
         
-        {/* Left Side: Character & Speech Bubble */}
-        <div className="w-full md:w-[45%] bg-slate-100/50 dark:bg-slate-800/30 p-8 md:p-12 flex flex-col items-center justify-center relative border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-800">
-          
-          <div className="relative mb-8 mt-4 group">
-            {/* Speech Bubble */}
-            <div className="bg-white dark:bg-slate-700 px-6 py-4 rounded-3xl rounded-br-none shadow-lg shadow-slate-200/50 dark:shadow-none border border-slate-200 dark:border-slate-600 mb-6 transform group-hover:-translate-y-2 group-hover:rotate-2 transition-all duration-300 relative z-10">
-              <p className="text-slate-800 dark:text-slate-100 font-bold text-[17px] leading-snug">
-                "Hey future topper! 👋 <br/>Ready to study smart today?"
-              </p>
-              {/* Little triangle for speech bubble */}
-              <div className="absolute -bottom-3 right-8 w-6 h-6 bg-white dark:bg-slate-700 border-b border-r border-slate-200 dark:border-slate-600 transform rotate-45 rounded-sm"></div>
-            </div>
-
-            {/* Character (Large Emoji) */}
-            <div className="text-[120px] leading-none text-center transform group-hover:scale-110 transition-transform duration-500 drop-shadow-2xl">
-              🦉
-            </div>
-            
-            {/* Glowing shadow under character */}
-            <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-28 h-6 bg-slate-300 dark:bg-slate-950 rounded-[100%] blur-md -z-10 group-hover:w-20 transition-all duration-500"></div>
-          </div>
-          
-          <div className="text-center mt-6">
-            <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Your mentor is waiting.</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 font-medium">Log in to jump right back into your roadmap and crush those goals.</p>
-          </div>
+        {/* Brand Logo */}
+        <div className="mb-6">
+          <BrandLogo href="/" size="lg" />
         </div>
 
-        {/* Right Side: Auth Form */}
-        <div className="w-full md:w-[55%] p-8 md:p-16 flex flex-col justify-center bg-white dark:bg-slate-900">
-          
-          <div className="mb-12 text-center md:text-left">
-            <div className="inline-block md:hidden mb-4">
-              <span className="font-black text-2xl text-slate-900 dark:text-white tracking-tighter">HelpSathi<span className="text-emerald-500">.</span></span>
-            </div>
-            <h1 className="text-3xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">Log in</h1>
-            <p className="text-slate-500 dark:text-slate-400 font-medium">Please verify your identity to continue.</p>
-          </div>
+        {/* Heading */}
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+          Welcome back
+        </h1>
+        <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mt-2 mb-8 leading-relaxed max-w-xs">
+          Sign in to connect with your mentors and continue your learning.
+        </p>
 
-          {error && (
-            <div className="mb-8 p-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl text-red-600 dark:text-red-400 text-sm font-semibold flex items-center gap-2">
-              <WarningCircle weight="bold" className="text-lg shrink-0" />
-              {error}
+        {/* Error message banner */}
+        {error && (
+          <div className="w-full mb-6 p-4 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 rounded-2xl text-rose-700 dark:text-rose-300 text-xs font-semibold flex items-center gap-2.5 text-left">
+            <WarningCircle weight="bold" className="text-lg shrink-0 text-rose-500" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {/* Google Authentication Action */}
+        <div className="w-full space-y-4">
+          {loading ? (
+            <div className="w-full flex items-center justify-center py-3.5 bg-slate-100 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-emerald-500"></div>
+              <span className="ml-3 text-slate-700 dark:text-slate-200 font-bold text-sm">Authenticating...</span>
+            </div>
+          ) : (
+            <div className="w-full [&>div]:w-full [&_iframe]:w-full flex justify-center shadow-xs rounded-2xl overflow-hidden border border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition">
+              <GoogleLogin
+                onSuccess={async (credentialResponse) => {
+                  try {
+                    setLoading(true);
+                    setError("");
+                    if (credentialResponse.credential) {
+                      await login(credentialResponse.credential);
+                    }
+                  } catch (err: any) {
+                    setError(err.message || "Failed to login");
+                    setLoading(false);
+                  }
+                }}
+                onError={() => {
+                  setError("Google Login Failed");
+                  setLoading(false);
+                }}
+                size="large"
+                theme="outline"
+                shape="rectangular"
+              />
             </div>
           )}
 
-          <div className="flex flex-col items-center justify-center space-y-4 w-full">
-            {loading ? (
-              <div className="w-full flex items-center justify-center py-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-500"></div>
-                <span className="ml-3 text-slate-600 dark:text-slate-300 font-medium">Authenticating...</span>
-              </div>
-            ) : (
-              <div className="w-full [&>div]:w-full [&_iframe]:w-full flex justify-center">
-                <GoogleLogin
-                  onSuccess={async (credentialResponse) => {
-                    try {
-                      setLoading(true);
-                      setError("");
-                      if (credentialResponse.credential) {
-                        await login(credentialResponse.credential);
-                      }
-                    } catch (err: any) {
-                      setError(err.message || "Failed to login");
-                      setLoading(false);
-                    }
-                  }}
-                  onError={() => {
-                    setError("Google Login Failed");
-                    setLoading(false);
-                  }}
-                  size="large"
-                  theme="outline"
-                  shape="rectangular"
-                />
-              </div>
-            )}
-          </div>
-
-          <div className="mt-12 text-center md:text-left">
-            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
-              By logging in, you agree to our <br className="hidden md:block"/>
-              <Link href="/terms" className="text-emerald-600 dark:text-emerald-400 hover:underline">Terms of Service</Link> and <Link href="/privacy" className="text-emerald-600 dark:text-emerald-400 hover:underline">Privacy Policy</Link>.
-            </p>
+          {/* Security Badge */}
+          <div className="flex items-center justify-center gap-1.5 text-[11px] font-semibold text-slate-400 dark:text-slate-500 pt-2">
+            <ShieldCheck weight="fill" className="text-emerald-500 text-sm" />
+            <span>Fast, 1-click Google Sign-in</span>
           </div>
         </div>
+
+        {/* Footer Links */}
+        <div className="mt-10 pt-6 border-t border-slate-100 dark:border-slate-800/80 w-full">
+          <p className="text-[11px] text-slate-400 dark:text-slate-500 leading-relaxed font-medium">
+            By signing in, you agree to our{" "}
+            <Link href="/terms" className="text-emerald-600 dark:text-emerald-400 font-semibold hover:underline">Terms</Link> and{" "}
+            <Link href="/privacy" className="text-emerald-600 dark:text-emerald-400 font-semibold hover:underline">Privacy Policy</Link>.
+          </p>
+        </div>
+
       </div>
     </div>
   );
@@ -205,3 +194,4 @@ export default function LoginPage() {
     </Suspense>
   );
 }
+
