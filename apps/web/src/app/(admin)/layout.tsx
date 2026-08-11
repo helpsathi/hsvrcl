@@ -101,7 +101,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
         <nav className="flex-1 overflow-y-auto py-6 px-3 space-y-1">
           {navItems.map((item) => {
-            const isActive = pathname === item.href || (item.href !== "/admin" && pathname.startsWith(`${item.href}`));
+            const isActive = pathname === item.href || (item.href !== "/admin" && pathname?.startsWith(`${item.href}`));
             return (
               <Link
                 key={item.name}
@@ -167,7 +167,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             </div>
             <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-1">
               {navItems.map((item) => {
-                const isActive = pathname === item.href || (item.href !== "/admin" && pathname.startsWith(`${item.href}`));
+                const isActive = pathname === item.href || (item.href !== "/admin" && pathname?.startsWith(`${item.href}`));
                 return (
                   <Link
                     key={item.name}

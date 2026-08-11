@@ -36,7 +36,7 @@ export function PublicNav() {
         {/* Desktop Navigation Links */}
         <div className="hidden md:flex items-center gap-1 lg:gap-2">
           {NAV_LINKS.map((link) => {
-            const isActive = pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href));
+            const isActive = pathname === link.href || (link.href !== "/" && pathname?.startsWith(link.href));
             return (
               <Link
                 key={link.href}
@@ -109,7 +109,7 @@ export function PublicNav() {
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl px-4 py-6 space-y-2 shadow-xl animate-in slide-in-from-top-2 duration-200">
           {NAV_LINKS.map((link) => {
-            const isActive = pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href));
+            const isActive = pathname === link.href || (link.href !== "/" && pathname?.startsWith(link.href));
             return (
               <Link
                 key={link.href}
