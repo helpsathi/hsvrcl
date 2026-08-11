@@ -22,7 +22,7 @@ function NotificationsContent() {
   const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialView = searchParams.get("view") === "settings" ? "SETTINGS" : "FEED";
+  const initialView = searchParams?.get("view") === "settings" ? "SETTINGS" : "FEED";
   const [viewMode, setViewMode] = useState<"FEED" | "SETTINGS">(initialView);
   const [notifications, setNotifications] = useState<NotifRecord[]>([]);
   const [loading, setLoading] = useState(true);
