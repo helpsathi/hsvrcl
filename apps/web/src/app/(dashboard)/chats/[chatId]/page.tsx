@@ -258,7 +258,7 @@ export default function ChatRoomPage() {
 
   // Auto-send a pending message passed via URL (subscribed user redirect flow)
   useEffect(() => {
-    if (!pendingMsg || !user || !socketRef.current) return;
+    if (!pendingMsg || !user || !isConnected) return;
     const tryAutoSend = () => {
       if (socketRef.current?.connected) {
         socketRef.current.emit("send_message", {
@@ -271,10 +271,9 @@ export default function ChatRoomPage() {
       }
     };
     // Wait a tick for socket to join session
-    const t = setTimeout(tryAutoSend, 800);
+    const t = setTimeout(tryAutoSend, 200);
     return () => clearTimeout(t);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pendingMsg, user]);
+  }, [pendingMsg, user, isConnected, chatId, router]);
 
   const handleSendMessage = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -326,7 +325,7 @@ export default function ChatRoomPage() {
       // Navigate to the new active chat — carries the message as a query param to auto-send
       router.push(`/chats/${data.chatId}?msg=${encodeURIComponent(newMessage.trim())}`);
     } catch (err: any) {
-      setError(err.message);
+      setSendError(err.message);
       setSubscribedSending(false);
     }
   };
