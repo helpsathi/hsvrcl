@@ -1,0 +1,136 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { useAuth } from "@/components/providers/AuthProvider";
+import { useToast } from "@/components/providers/ToastProvider";
+import { WarningCircle, CalendarCheck, ArrowLeft } from "@phosphor-icons/react";
+import { GoogleMeetRoom } from "@/components/GoogleMeetRoom";
+import Link from "next/link";
+
+interface ScheduledCall {
+  id: string;
+  status: string;
+  scheduledAt: string;
+  durationMinutes: number;
+  meetLink: string | null;
+  studentId: string;
+  mentorId: string;
+  student: { id: string; name: string; avatar: string | null; email?: string };
+  mentor: { id: string; name: string; avatar: string | null; email?: string };
+}
+
+export default function MeetingRoomPage() {
+  const { id } = useParams();
+  const { user } = useAuth();
+  const router = useRouter();
+  const toast = useToast();
+
+  const [call, setCall] = useState<ScheduledCall | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchCall = async () => {
+      try {
+        const res = await fetch(`/api/scheduled-calls/${id}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        setCall(data.call);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCall();
+  }, [id, user]);
+
+  const handleGenerateLink = async () => {
+    try {
+      const res = await fetch(`/api/scheduled-calls/${id}/generate-meet`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to generate Google Meet link");
+      if (data.call) {
+        setCall(data.call);
+        toast.success("Google Meet link synchronized successfully! 🔗");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to sync link");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-slate-50 dark:bg-slate-950">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-slate-500 dark:text-slate-400 font-medium">Loading meeting room...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !call) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-slate-50 dark:bg-slate-950 p-6">
+        <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl shadow-2xl text-center max-w-sm w-full border border-slate-200 dark:border-slate-800">
+          <WarningCircle weight="fill" className="text-6xl text-rose-500 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Error</h2>
+          <p className="text-slate-500 dark:text-slate-400 mb-6">{error || "Meeting not found"}</p>
+          <Link href="/dashboard" className="bg-brand-600 hover:bg-brand-700 text-white px-6 py-3 rounded-xl font-bold w-full block transition-colors">Go Dashboard</Link>
+        </div>
+      </div>
+    );
+  }
+
+  const isHost = user?.id === call.mentorId;
+  const otherUser = isHost ? call.student : call.mentor;
+
+  return (
+    <div className="flex flex-col h-[100dvh] w-full bg-slate-50 dark:bg-slate-950 overflow-hidden relative">
+      {/* Header */}
+      <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl px-4 py-3 border-b border-slate-200/60 dark:border-slate-800/60 flex items-center gap-4 z-30 shrink-0">
+        <button 
+          onClick={() => router.back()}
+          className="w-10 h-10 rounded-full flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+        >
+          <ArrowLeft className="text-xl" />
+        </button>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-brand-100 dark:bg-brand-900/30 text-brand-600 flex items-center justify-center">
+            <CalendarCheck weight="fill" className="text-xl" />
+          </div>
+          <div>
+            <h1 className="font-bold text-slate-900 dark:text-white leading-tight">
+              Meeting with {otherUser.name}
+            </h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+              Scheduled for {call.durationMinutes} minutes
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Video Area / Lobby */}
+      <div className="flex-1 w-full bg-slate-950 p-4 md:p-6 lg:p-8 flex items-center justify-center overflow-y-auto">
+        <div className="w-full h-auto max-w-4xl mx-auto">
+          <GoogleMeetRoom
+            title={`Consultation: ${call.mentor.name} & ${call.student.name}`}
+            subtitle={isHost ? `Hosting mentorship consultation with ${call.student.name}` : `Mentorship appointment hosted by ${call.mentor.name}`}
+            meetLink={call.meetLink}
+            scheduledAt={call.scheduledAt}
+            durationMinutes={call.durationMinutes}
+            isHost={isHost}
+            onGenerateLink={handleGenerateLink}
+            participantName={otherUser.name}
+            participantRole={isHost ? "Student" : "Mentor"}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}

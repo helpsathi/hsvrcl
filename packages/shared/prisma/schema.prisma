@@ -1,0 +1,578 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  STUDENT
+  MENTOR
+  ADMIN
+}
+
+enum AdminSubRole {
+  SUPER_ADMIN
+  ADMIN
+  SUPPORT
+  MODERATOR
+}
+
+enum MentorStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  HIDDEN
+}
+
+enum CouponDiscountType {
+  PERCENTAGE
+  FLAT
+}
+
+enum WithdrawalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+  CANCELLED
+}
+
+enum ChatSessionStatus {
+  PENDING
+  ACTIVE
+  COMPLETED
+  CANCELLED
+  EXPIRED
+}
+
+enum ScheduledChatStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  RESCHEDULED
+  MISSED
+  ACCEPTED
+  REJECTED
+  DISPUTED
+}
+
+enum ProposalStatus {
+  OPEN
+  CLOSED
+  CANCELLED
+}
+
+enum ScheduledMessageStatus {
+  PENDING
+  SENT
+  CANCELLED
+  FAILED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+model User {
+  id                 String        @id @default(uuid())
+  email              String        @unique
+  name               String
+  avatar             String?
+  role               Role          @default(STUDENT)
+  adminSubRole       AdminSubRole?
+  googleId           String?       @unique
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  phone              String?
+  profileComplete    Boolean       @default(false)
+  freeTrialChatsUsed Int           @default(0)
+  isBanned           Boolean       @default(false)
+  isSuspended        Boolean       @default(false)
+  deletedAt          DateTime?
+
+  mentorProfile MentorProfile?
+  wallet        Wallet?
+  subscriptions Subscription[]
+
+  studentChatSessions ChatSession[]  @relation("StudentChatSessions")
+  mentorChatSessions  ChatSession[]  @relation("MentorChatSessions")
+  studentScheduledChats ScheduledChat[] @relation("StudentScheduledChats")
+  mentorScheduledChats  ScheduledChat[] @relation("MentorScheduledChats")
+  scheduledMessages   ScheduledMessage[] @relation("MentorScheduledMessages")
+  messages            Message[]
+  reviewsGiven        Review[]       @relation("StudentReviews")
+  notifications       Notification[]
+  couponUsages        CouponUsage[]
+  pushSubscriptions   PushSubscription[]
+
+  communityPosts    CommunityPost[]
+  communityComments CommunityComment[]
+  groupMeetings     GroupMeeting[]
+  groupMeetingAttendances GroupMeetingAttendee[] @relation("GroupMeetingAttendees")
+  proposalAcceptances SessionProposalAcceptance[]
+  auditLogs         AuditLog[]     @relation("UserAuditLogs")
+  payments          Payment[]
+
+  @@index([role, isBanned, isSuspended, deletedAt])
+  @@index([createdAt])
+  @@map("users")
+}
+
+model MentorProfile {
+  id             String       @id @default(uuid())
+  userId         String       @unique
+  username       String?      @unique
+  user           User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+  status         MentorStatus @default(PENDING)
+  bio            String?
+  linkedinUrl    String?
+  categories     String[]
+  skills         String[]
+  languages      String[]
+  experience     Int          @default(0)
+  monthlyPrice       Float        @default(0)
+  perMinutePrice     Float        @default(15) // Chat rate
+  callPricePerMinute Float        @default(15) // Call / Consultation rate
+  commissionRate     Float?
+  availability   Json?
+  freeTrial      Boolean      @default(false)
+  bankDetails    Json?
+  upiId          String?
+  isOnline       Boolean      @default(false)
+  avgRating      Float        @default(0)
+  reviewCount    Int          @default(0)
+  resumeUrl      String?
+  subscribedBookingFree Boolean @default(true)  // If true, subscribers book calls for free
+  holidayMode    Boolean      @default(false)
+  holidayUntil   DateTime?
+  rejectionReason String?
+  bookingNoticeHours Int      @default(2)
+  googleCalendarRefreshToken String?   // Mentor's own Google OAuth token for Meet generation
+  googleCalendarConnected    Boolean   @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  subscriptions Subscription[] @relation("MentorSubscriptions")
+  reviews       Review[]       @relation("MentorReviews")
+  announcements Announcement[]
+  availabilitySlots MentorAvailability[]
+  sessionProposals SessionProposal[]
+  withdrawalRequests WithdrawalRequest[] @relation("MentorWithdrawalRequests")
+
+  @@index([status, avgRating])
+  @@map("mentor_profiles")
+}
+
+model Review {
+  id               String       @id @default(uuid())
+  studentId        String
+  student          User         @relation("StudentReviews", fields: [studentId], references: [id], onDelete: Restrict)
+  mentorId         String
+  mentor           MentorProfile @relation("MentorReviews", fields: [mentorId], references: [id], onDelete: Restrict)
+  rating           Int
+  comment          String?
+  status           ReviewStatus @default(PENDING)
+  publishedAt      DateTime
+  removalRequested Boolean      @default(false)
+  removalReason    String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@index([mentorId, status])
+  @@index([studentId])
+  @@map("reviews")
+}
+
+model PlatformConfig {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String
+  description String?
+  type        String   @default("string")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("platform_config")
+}
+
+model WithdrawalRequest {
+  id         String           @id @default(uuid())
+  mentorId   String
+  mentor     MentorProfile    @relation("MentorWithdrawalRequests", fields: [mentorId], references: [id], onDelete: Cascade)
+  amount     Float
+  status     WithdrawalStatus @default(PENDING)
+  upiId      String?
+  adminNotes String?
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  @@index([mentorId, status])
+  @@map("withdrawal_requests")
+}
+
+model Wallet {
+  id           String        @id @default(uuid())
+  userId       String        @unique
+  user         User          @relation(fields: [userId], references: [id], onDelete: Restrict)
+  balance      Float         @default(0)
+  lockedBalance Float        @default(0)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  transactions Transaction[]
+
+  @@map("wallets")
+}
+
+model Transaction {
+  id          String   @id @default(uuid())
+  walletId    String
+  wallet      Wallet   @relation(fields: [walletId], references: [id], onDelete: Restrict)
+  type        String
+  amount      Float
+  description String?
+  referenceId String?
+  createdAt   DateTime @default(now())
+
+  @@index([walletId, createdAt])
+  @@index([referenceId])
+  @@map("transactions")
+}
+
+model Subscription {
+  id        String        @id @default(uuid())
+  studentId String
+  student   User          @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  mentorId  String
+  mentor    MentorProfile @relation("MentorSubscriptions", fields: [mentorId], references: [id], onDelete: Restrict)
+  price     Float
+  startDate     DateTime      @default(now())
+  endDate       DateTime
+  isActive      Boolean       @default(true)
+  autoRenew     Boolean       @default(true)
+  paymentMethod String        @default("WALLET")
+  razorpaySubId String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([studentId, isActive, endDate])
+  @@index([mentorId, isActive])
+  @@map("subscriptions")
+}
+
+model ChatSession {
+  id               String            @id @default(uuid())
+  studentId        String
+  student          User              @relation("StudentChatSessions", fields: [studentId], references: [id], onDelete: Restrict)
+  mentorId         String
+  mentor           User              @relation("MentorChatSessions", fields: [mentorId], references: [id], onDelete: Restrict)
+  status           ChatSessionStatus @default(ACTIVE)
+  startTime        DateTime          @default(now())
+  firstMessageTime DateTime?
+  endTime          DateTime?
+  perMinuteRate    Float             @default(15)
+  totalCharge      Float             @default(0)
+  durationMinutes  Int               @default(0)
+  isFreeTrial      Boolean           @default(false)
+  isScheduled      Boolean           @default(false)
+  isPrivate        Boolean           @default(false)
+  scheduledChatId  String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  messages         Message[]
+
+  @@index([mentorId, status])
+  @@index([studentId, status])
+  @@map("chat_sessions")
+}
+
+model ScheduledChat {
+  id              String              @id @default(uuid())
+  studentId       String
+  student         User                @relation("StudentScheduledChats", fields: [studentId], references: [id], onDelete: Restrict)
+  mentorId        String
+  mentor          User                @relation("MentorScheduledChats", fields: [mentorId], references: [id], onDelete: Restrict)
+  scheduledAt     DateTime
+  durationMinutes Int                 @default(15)
+  status          ScheduledChatStatus @default(PENDING)
+  reminderSent    Boolean             @default(false)
+  notes           String?
+  estimatedCost   Float               @default(0)
+  meetLink        String?
+  eventId         String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  @@index([scheduledAt, status])
+  @@index([studentId, status])
+  @@index([mentorId, status])
+  @@map("scheduled_chats")
+}
+
+model Message {
+  id          String      @id @default(uuid())
+  sessionId   String
+  session     ChatSession @relation(fields: [sessionId], references: [id], onDelete: Restrict)
+  senderId    String
+  sender      User        @relation(fields: [senderId], references: [id], onDelete: Restrict)
+  content     String
+  attachments String[]    @default([])
+  isDeleted   Boolean     @default(false)
+  editedAt    DateTime?
+  createdAt   DateTime    @default(now())
+
+  @@index([sessionId, createdAt])
+  @@map("messages")
+}
+
+model Coupon {
+  id                   String             @id @default(uuid())
+  code                 String             @unique
+  discountType         CouponDiscountType @default(PERCENTAGE)
+  discountValue        Float
+  maxDiscountAmount    Float?
+  minPurchaseAmount    Float              @default(0)
+  totalLimit           Int?
+  perUserLimit         Int                @default(1)
+  usedCount            Int                @default(0)
+  isActive             Boolean            @default(true)
+  firstTimeOnly        Boolean            @default(false)
+  applicableCategories String[]
+  applicableMentors    String[]           @default([])
+  expiresAt            DateTime?
+  showOnDashboard      Boolean            @default(false)
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  usages CouponUsage[]
+
+  @@map("coupons")
+}
+
+model CouponUsage {
+  id              String   @id @default(uuid())
+  couponId        String
+  coupon          Coupon   @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  discountApplied Float
+  createdAt       DateTime @default(now())
+
+  @@map("coupon_usages")
+}
+
+model Notification {
+  id         String   @id @default(uuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  targetRole String?
+  title      String
+  message    String
+  type       String   @default("GENERAL")
+  link       String?
+  isRead     Boolean  @default(false)
+  readBy     String[] @default([])
+  createdAt  DateTime @default(now())
+
+  @@index([userId, isRead, createdAt])
+  @@index([targetRole, createdAt])
+  @@map("notifications")
+}
+
+model Announcement {
+  id             String         @id @default(uuid())
+  mentorId       String?
+  mentor         MentorProfile? @relation(fields: [mentorId], references: [id], onDelete: Cascade)
+  title          String
+  content        String
+  targetAudience String         @default("SUBSCRIBERS")
+  createdAt      DateTime       @default(now())
+
+  @@map("announcements")
+}
+
+model CommunityPost {
+  id        String             @id @default(uuid())
+  authorId  String
+  author    User               @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  content   String             @db.VarChar(1000)
+  category  String?
+  isDeleted Boolean            @default(false)
+  deletedBy String?
+  editedAt  DateTime?
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+  comments  CommunityComment[]
+
+  @@map("community_posts")
+}
+
+model CommunityComment {
+  id        String        @id @default(uuid())
+  postId    String
+  post      CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  content   String        @db.VarChar(500)
+  isDeleted Boolean       @default(false)
+  createdAt DateTime      @default(now())
+
+  @@map("community_comments")
+}
+
+model GroupMeeting {
+  id          String                 @id @default(uuid())
+  mentorId    String
+  mentor      User                   @relation(fields: [mentorId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  meetLink    String
+  eventId     String?
+  scheduledAt DateTime
+  durationMinutes Int                @default(60)
+  createdAt   DateTime               @default(now())
+  attendees   GroupMeetingAttendee[]
+
+  @@map("group_meetings")
+}
+
+model GroupMeetingAttendee {
+  id        String       @id @default(uuid())
+  meetingId String
+  meeting   GroupMeeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User         @relation("GroupMeetingAttendees", fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt  DateTime     @default(now())
+
+  @@unique([meetingId, userId])
+  @@map("group_meeting_attendees")
+}
+
+model MentorAvailability {
+  id         String        @id @default(uuid())
+  mentorId   String
+  mentor     MentorProfile @relation(fields: [mentorId], references: [id], onDelete: Cascade)
+  dayOfWeek  Int           // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
+  startHour  Int           // 0-23
+  startMin   Int           // 0 or 30
+  endHour    Int
+  endMin     Int
+  isActive   Boolean       @default(true)
+  createdAt  DateTime      @default(now())
+
+  @@map("mentor_availability")
+}
+
+model SessionProposal {
+  id              String         @id @default(uuid())
+  mentorProfileId String
+  mentor          MentorProfile  @relation(fields: [mentorProfileId], references: [id], onDelete: Cascade)
+  title           String
+  description     String?
+  proposedAt      DateTime
+  durationMinutes Int            @default(30)
+  targetType      String         @default("ALL")  // "ALL" | "SELECTED"
+  targetStudentIds String[]      // Empty = all subscribers
+  expiresAt       DateTime
+  status          ProposalStatus @default(OPEN)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  acceptances SessionProposalAcceptance[]
+
+  @@index([mentorProfileId, status])
+  @@map("session_proposals")
+}
+
+model SessionProposalAcceptance {
+  id              String          @id @default(uuid())
+  proposalId      String
+  proposal        SessionProposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  studentId       String
+  student         User            @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  scheduledChatId String?         // Set once a ScheduledChat is created from this acceptance
+  isFree          Boolean         @default(true)
+  acceptedAt      DateTime        @default(now())
+
+  @@unique([proposalId, studentId])
+  @@map("session_proposal_acceptances")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation("UserAuditLogs", fields: [userId], references: [id], onDelete: SetNull)
+  action    String
+  targetId  String?
+  details   String?
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([action, createdAt])
+  @@map("audit_logs")
+}
+
+model ScheduledMessage {
+  id                 String                 @id @default(uuid())
+  mentorId           String
+  mentor             User                   @relation("MentorScheduledMessages", fields: [mentorId], references: [id], onDelete: Restrict)
+  content            String
+  attachments        String[]               @default([])
+  scheduledAt        DateTime
+  targetAudience     String                 // "ALL_SUBSCRIBERS", "ALL_PAST_STUDENTS", "SPECIFIC"
+  targetStudentIds   String[]               // Array of user IDs if targetAudience is "SPECIFIC"
+  status             ScheduledMessageStatus @default(PENDING)
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+
+  @@index([status, scheduledAt])
+  @@map("scheduled_messages")
+}
+
+model PushSubscription {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, endpoint])
+  @@map("push_subscriptions")
+}
+
+model Payment {
+  id        String        @id @default(uuid())
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Restrict)
+  amount    Float
+  currency  String        @default("INR")
+  gateway   String        @default("RAZORPAY")
+  orderId   String?       @unique
+  paymentId String?       @unique
+  signature String?
+  status    PaymentStatus @default(PENDING)
+  purpose   String        // WALLET_RECHARGE, SUBSCRIPTION, DIRECT_CALL
+  targetId  String?       // Subscription ID or Mentor ID
+  metadata  Json?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([userId, status])
+  @@index([orderId])
+  @@map("payments")
+}

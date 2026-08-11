@@ -1,0 +1,29 @@
+{
+  "name": "helpsathi",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev -w web\" \"npm run dev -w @helpsathi/realtime\"",
+    "build": "npm run build --workspaces",
+    "start": "concurrently \"npm run start -w web\" \"npm run start -w @helpsathi/realtime\"",
+    "preview": "npm run start",
+    "db:generate": "npx prisma generate --schema=packages/shared/prisma/schema.prisma",
+    "db:push": "npx prisma db push --schema=packages/shared/prisma/schema.prisma",
+    "db:seed": "npm --workspace=@helpsathi/shared run seed",
+    "db:reset": "npm --workspace=@helpsathi/shared run reset-test-data",
+    "db:studio": "npx prisma studio --schema=packages/shared/prisma/schema.prisma",
+    "typecheck": "tsc --noEmit -p apps/web/tsconfig.json && tsc --noEmit -p apps/realtime/tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.2",
+    "concurrently": "^9.1.2"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.9.0",
+    "pg": "^8.22.0"
+  }
+}
