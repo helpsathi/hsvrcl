@@ -414,7 +414,7 @@ export default function BookCallPage() {
                 <div className="flex items-center justify-between">
                   <h2 className="font-extrabold text-slate-900 dark:text-white text-lg flex items-center gap-2">
                     <Clock weight="fill" className="text-blue-600 dark:text-blue-400" />
-                    <span>Select Time Slot</span>
+                    <span>Select Time Slot (IST)</span>
                   </h2>
                   <div className="text-right">
                     {availabilitySlots.length > 0 && (

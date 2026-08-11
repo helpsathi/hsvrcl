@@ -24,11 +24,16 @@ async function checkTimeSlotConflict(db: any, mentorId: string, start: Date, end
 }
 
 async function checkMentorAvailability(db: any, mentorProfile: any, start: Date, end: Date): Promise<boolean> {
-  const dayOfWeek = start.getDay(); // 0-6 (Sun-Sat)
-  const startHour = start.getHours();
-  const startMin = start.getMinutes();
-  const endHour = end.getHours();
-  const endMin = end.getMinutes();
+  // Convert UTC Date to IST before extracting components
+  const istOffset = 5.5 * 60 * 60 * 1000;
+  const startIST = new Date(start.getTime() + istOffset);
+  const endIST = new Date(end.getTime() + istOffset);
+
+  const dayOfWeek = startIST.getUTCDay(); // 0-6 (Sun-Sat)
+  const startHour = startIST.getUTCHours();
+  const startMin = startIST.getUTCMinutes();
+  const endHour = endIST.getUTCHours();
+  const endMin = endIST.getUTCMinutes();
 
   const allSlots = await getOrSyncMentorAvailability(db, mentorProfile);
   const slots = allSlots.filter((s: any) => s.dayOfWeek === dayOfWeek && s.isActive !== false);
