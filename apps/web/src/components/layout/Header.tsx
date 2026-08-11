@@ -47,7 +47,7 @@ function DesktopSearchBar() {
   const [query, setQuery] = useState("");
 
   useEffect(() => {
-    if (pathname?.startsWith("/mentors")) {
+    if (pathname?.startsWith("/explore")) {
       const q = searchParams.get("search") || "";
       setQuery(q);
     }
@@ -56,8 +56,8 @@ function DesktopSearchBar() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     const clean = query.trim();
-    if (clean || pathname?.startsWith("/mentors")) {
-      router.push(`/mentors?search=${encodeURIComponent(clean)}`);
+    if (clean || pathname?.startsWith("/explore")) {
+      router.push(`/explore?search=${encodeURIComponent(clean)}`);
     }
   };
 
@@ -77,8 +77,8 @@ function DesktopSearchBar() {
             type="button" 
             onClick={() => {
               setQuery("");
-              if (pathname?.startsWith("/mentors")) {
-                router.push("/mentors");
+              if (pathname?.startsWith("/explore")) {
+                router.push("/explore");
               }
             }} 
             className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 text-sm"
@@ -100,7 +100,7 @@ function MobileSearchAction() {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    if (pathname?.startsWith("/mentors")) {
+    if (pathname?.startsWith("/explore")) {
       const q = searchParams.get("search") || "";
       setQuery(q);
     }
@@ -109,8 +109,8 @@ function MobileSearchAction() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     const clean = query.trim();
-    if (clean || pathname?.startsWith("/mentors")) {
-      router.push(`/mentors?search=${encodeURIComponent(clean)}`);
+    if (clean || pathname?.startsWith("/explore")) {
+      router.push(`/explore?search=${encodeURIComponent(clean)}`);
       setIsOpen(false);
     }
   };
@@ -234,7 +234,6 @@ export function Header() {
     <header className="bg-surface dark:bg-slate-900 px-2.5 sm:px-4 py-2.5 sm:py-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between z-30 shrink-0 lg:px-8 relative transition-colors shadow-2xs">
       {/* Mobile Logo */}
       <div className="flex items-center gap-1.5 md:hidden shrink-0">
-        <img src="/logo.png" alt="Help Sathi" className="h-7 w-auto drop-shadow-sm" />
         <span className="font-extrabold text-lg sm:text-xl text-slate-900 dark:text-white tracking-tight leading-none">Help Sathi</span>
       </div>
 

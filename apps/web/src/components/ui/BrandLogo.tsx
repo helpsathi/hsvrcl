@@ -30,12 +30,7 @@ export function BrandLogo({
   };
 
   const content = (
-    <div className={`flex items-center gap-2.5 group transition-transform duration-200 hover:scale-[1.01] ${className}`}>
-      <img 
-        src="/logo.png" 
-        alt="Help Sathi Logo" 
-        className={`${iconSizes[size]} w-auto object-contain drop-shadow-sm`} 
-      />
+    <div className={`flex items-center gap-2 group transition-transform duration-200 hover:scale-[1.01] ${className}`}>
       <span className={`font-black ${textSizes[size]} text-slate-900 dark:text-white tracking-tight leading-none`}>
         Help<span className="text-blue-600 dark:text-blue-400">Sathi</span>
       </span>

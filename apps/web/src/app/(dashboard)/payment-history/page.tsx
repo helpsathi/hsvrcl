@@ -68,7 +68,7 @@ export default function PaymentHistoryPage() {
   });
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 pb-12">
+    <div className="max-w-5xl mx-auto space-y-8 pb-12 px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6">
       {/* Header */}
       <div className="space-y-2">
         <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 text-xs font-bold uppercase tracking-wider">
@@ -84,7 +84,7 @@ export default function PaymentHistoryPage() {
 
       {/* Filter Tabs */}
       <div className="flex items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
-        <div className="flex rounded-xl bg-slate-100 dark:bg-slate-800 p-1 overflow-x-auto whitespace-nowrap">
+        <div className="flex flex-1 min-w-0 rounded-xl bg-slate-100 dark:bg-slate-800 p-1 overflow-x-auto whitespace-nowrap scrollbar-none">
           {[
             { label: "All Records", value: "ALL" },
             { label: "Wallet Ledger", value: "WALLET" },
@@ -197,7 +197,7 @@ export default function PaymentHistoryPage() {
 
       {/* Pagination Controls */}
       {!loading && totalPages > 1 && (
-        <div className="flex items-center justify-between pt-6 border-t border-slate-200 dark:border-slate-800">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-6 border-t border-slate-200 dark:border-slate-800">
           <span className="text-xs text-slate-500 font-medium">
             Page {page} of {totalPages} ({totalRecords} records)
           </span>

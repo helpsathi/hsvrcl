@@ -53,7 +53,7 @@ export function MobileNav() {
       ]
     : [
         { href: "/dashboard", label: "Home", icon: House },
-        { href: "/mentors", label: "Mentors", icon: ChalkboardTeacher },
+        { href: "/explore", label: "Mentors", icon: ChalkboardTeacher },
         { href: "/my-mentors", label: "My Mentors", icon: SealCheck },
         { href: "/chats", label: "Chats", icon: ChatCircleDots, badge: true },
       ];

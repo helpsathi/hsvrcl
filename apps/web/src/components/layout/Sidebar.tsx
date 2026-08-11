@@ -30,7 +30,7 @@ export function Sidebar() {
 
   const links = [
     { href: "/dashboard", label: "Home", icon: House },
-    { href: "/mentors", label: "Mentors", icon: ChalkboardTeacher },
+    { href: "/explore", label: "Mentors", icon: ChalkboardTeacher },
     ...(user?.role === "STUDENT" ? [{ href: "/my-mentors", label: "My Mentors", icon: SealCheck }] : []),
     { href: "/community", label: "Community", icon: UsersThree },
     { href: "/announcements", label: "Announcements", icon: Megaphone },

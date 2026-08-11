@@ -322,7 +322,7 @@ export default function DashboardHome() {
               const Icon = (PhosphorIcons as any)[offer.iconName] || PhosphorIcons.Star;
               const targetRoute = offer.title?.toLowerCase().includes("wallet") || offer.title?.toLowerCase().includes("recharge")
                 ? "/wallet" 
-                : "/mentors";
+                : "/explore";
 
               return (
                 <div 
@@ -358,7 +358,7 @@ export default function DashboardHome() {
         <div className="py-4 mb-2">
           <div className="flex items-center justify-between px-4 lg:px-6 mb-3">
             <h2 className="text-sm font-bold text-slate-800 dark:text-slate-200">Categories</h2>
-            <Link href="/mentors" className="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline">View All</Link>
+            <Link href="/explore" className="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline">View All</Link>
           </div>
           <div className="flex overflow-x-auto gap-4 px-4 lg:px-6 no-scrollbar pb-2">
             {categories.map((cat) => {
@@ -453,7 +453,7 @@ export default function DashboardHome() {
       )}
 
       {/* Free Trial Status Card (Student) */}
-      {user?.role === "STUDENT" && (
+      {user?.role === "STUDENT" && (freeTrialMaxChats - (user?.freeTrialChatsUsed ?? 0) > 0) && (
         <div className="px-4 lg:px-6 pt-2 pb-2">
           <div className="bg-gradient-to-r from-brand-50 to-indigo-50 dark:from-brand-950/40 dark:to-indigo-950/40 border border-brand-200/80 dark:border-brand-800/60 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
             <div className="flex items-center gap-3">
@@ -470,7 +470,7 @@ export default function DashboardHome() {
               </div>
             </div>
             <Link
-              href="/mentors"
+              href="/explore"
               className="self-start sm:self-auto px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl shadow-sm transition whitespace-nowrap"
             >
               Find a Mentor

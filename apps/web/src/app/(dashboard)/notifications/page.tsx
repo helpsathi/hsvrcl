@@ -315,7 +315,7 @@ function NotificationsContent() {
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
                             <h4 className="font-black text-sm text-slate-900 dark:text-white truncate">{notif.title}</h4>
                             {!notif.isRead && (
                               <span className="w-2 h-2 rounded-full bg-brand-main animate-ping shrink-0" />

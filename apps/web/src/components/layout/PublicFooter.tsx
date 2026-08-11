@@ -8,8 +8,7 @@ export function PublicFooter() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           {/* Brand Col */}
           <div className="lg:col-span-5 flex flex-col gap-5">
-            <Link href="/" className="flex items-center gap-3 group">
-              <img src="/logo.png" alt="Help Sathi Logo" className="h-10 w-auto object-contain brightness-0 invert opacity-90 group-hover:opacity-100 transition-opacity" />
+            <Link href="/" className="flex items-center group">
               <span className="font-extrabold text-2xl text-white tracking-tight">
                 Help<span className="text-blue-500">Sathi</span>
               </span>
