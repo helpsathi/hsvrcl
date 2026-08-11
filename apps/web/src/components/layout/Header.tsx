@@ -48,7 +48,7 @@ function DesktopSearchBar() {
 
   useEffect(() => {
     if (pathname?.startsWith("/explore")) {
-      const q = searchParams.get("search") || "";
+      const q = searchParams?.get("search") || "";
       setQuery(q);
     }
   }, [pathname, searchParams]);
@@ -101,7 +101,7 @@ function MobileSearchAction() {
 
   useEffect(() => {
     if (pathname?.startsWith("/explore")) {
-      const q = searchParams.get("search") || "";
+      const q = searchParams?.get("search") || "";
       setQuery(q);
     }
   }, [pathname, searchParams]);

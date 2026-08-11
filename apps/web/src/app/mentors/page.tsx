@@ -17,8 +17,8 @@ function MentorsDirectoryContent() {
   const router = useRouter();
   const toast = useToast();
   const searchParams = useSearchParams();
-  const initialSearch = searchParams.get("search") || "";
-  const initialCategory = searchParams.get("category") || "All";
+  const initialSearch = searchParams?.get("search") || "";
+  const initialCategory = searchParams?.get("category") || "All";
 
   const [mentors, setMentors] = useState<MentorProps[]>([]);
   const [subscribedMentors, setSubscribedMentors] = useState<MentorProps[]>([]);
@@ -49,8 +49,8 @@ function MentorsDirectoryContent() {
 
   // Keep search query and category updated if URL parameters change from navigation
   useEffect(() => {
-    const q = searchParams.get("search") || "";
-    const c = searchParams.get("category");
+    const q = searchParams?.get("search") || "";
+    const c = searchParams?.get("category");
     setSearchQuery(q);
     if (c) {
       setSelectedCategory(c);

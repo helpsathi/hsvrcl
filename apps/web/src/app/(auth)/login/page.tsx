@@ -67,7 +67,7 @@ function LoginContent() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const errorParam = searchParams.get("error");
+    const errorParam = searchParams?.get("error");
     if (errorParam === "session_expired") {
       setError("Your session has expired. Please log in again.");
       // Forcefully clear the zombie cookie in the browser to prevent Next.js client-side router loops
