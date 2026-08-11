@@ -33,9 +33,7 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  experimental: {
-    optimizePackageImports: ['@phosphor-icons/react', 'lucide-react', '@base-ui/react'],
-  },
+  experimental: {},
   async headers() {
     return [
       {
