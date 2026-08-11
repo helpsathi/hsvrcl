@@ -20,7 +20,8 @@ interface GroupMeeting {
 }
 
 export default function GroupMeetingRoomPage() {
-  const { id } = useParams();
+  const params = useParams();
+  const id = params?.id as string;
   const { user } = useAuth();
   const router = useRouter();
   const toast = useToast();

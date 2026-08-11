@@ -50,7 +50,8 @@ interface Mentor {
 }
 
 export default function MentorProfilePage() {
-  const { id } = useParams();
+  const params = useParams();
+  const id = params?.id as string;
   const mentorId = id as string;
   const { user } = useAuth();
   const router = useRouter();

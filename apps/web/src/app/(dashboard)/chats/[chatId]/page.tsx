@@ -72,13 +72,14 @@ interface SessionSummary {
 
 // Quick Pills removed
 export default function ChatRoomPage() {
-  const { chatId } = useParams();
+  const params = useParams();
+  const chatId = params?.chatId as string;
   const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const pendingMsg = searchParams.get("msg");
-  const paramName = searchParams.get("name");
-  const paramAvatar = searchParams.get("avatar");
+  const pendingMsg = searchParams?.get("msg");
+  const paramName = searchParams?.get("name");
+  const paramAvatar = searchParams?.get("avatar");
 
   const [chat, setChat] = useState<ChatData | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);

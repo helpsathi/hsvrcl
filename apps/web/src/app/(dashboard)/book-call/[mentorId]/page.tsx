@@ -76,7 +76,8 @@ function formatTimeSlot12H(slot: string) {
 }
 
 export default function BookCallPage() {
-  const { mentorId } = useParams<{ mentorId: string }>();
+  const params = useParams<{ mentorId: string }>();
+  const mentorId = params?.mentorId as string;
   const router = useRouter();
   const { user } = useAuth();
 
