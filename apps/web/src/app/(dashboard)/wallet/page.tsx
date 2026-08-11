@@ -63,7 +63,7 @@ export default function WalletPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
-  const limit = 10;
+  const limit = 6;
 
   const fetchWallet = async (pageNum: number = 1, append: boolean = false) => {
     try {
@@ -442,7 +442,7 @@ export default function WalletPage() {
             </div>
           )}
 
-          {wallet?.transactions.map((tx) => (
+          {wallet?.transactions.slice(0, 6).map((tx) => (
             <div 
               key={tx.id} 
               className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-800 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors shadow-sm"
@@ -472,27 +472,15 @@ export default function WalletPage() {
             </div>
           ))}
 
-          {page < totalPages && (
+          {wallet?.transactions && wallet.transactions.length > 0 && (
             <div className="flex justify-center mt-6">
-              <button 
-                onClick={() => {
-                  const nextPage = page + 1;
-                  setPage(nextPage);
-                  fetchWallet(nextPage, true);
-                }} 
-                disabled={loadingMore}
-                className="px-6 py-2.5 text-sm font-bold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 disabled:opacity-50 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition shadow-sm inline-flex items-center gap-2"
+              <Link 
+                href="/payment-history"
+                className="px-6 py-2.5 text-xs sm:text-sm font-extrabold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 transition shadow-sm inline-flex items-center gap-2"
               >
-                {loadingMore ? (
-                  <>
-                    <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    Loading...
-                  </>
-                ) : "Load More Transactions"}
-              </button>
+                <span>See More</span>
+                <ArrowRight weight="bold" className="text-sm" />
+              </Link>
             </div>
           )}
         </div>

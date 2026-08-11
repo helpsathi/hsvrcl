@@ -68,7 +68,7 @@ export default function PaymentHistoryPage() {
   });
 
   return (
-    <div className="w-full max-w-5xl mx-auto space-y-6 sm:space-y-8 pb-12 px-3.5 sm:px-6 lg:px-8 pt-3 sm:pt-6 overflow-x-hidden">
+    <div className="w-full max-w-5xl mx-auto space-y-6 sm:space-y-8 pb-6 sm:pb-12 px-3.5 sm:px-6 lg:px-8 pt-3 sm:pt-6 overflow-x-hidden">
       {/* Header */}
       <div className="space-y-2">
         <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 text-xs font-bold uppercase tracking-wider">
@@ -177,7 +177,7 @@ export default function PaymentHistoryPage() {
                     <div className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-2 sm:gap-3">
                       <span className="shrink-0">{new Date(tx.date).toLocaleDateString("en-IN", { day: "2-digit", month: "2-digit", year: "numeric" })} at {new Date(tx.date).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</span>
                       {tx.reference && (
-                        <span className="font-mono text-[10px] sm:text-[11px] bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-600 dark:text-slate-300 truncate max-w-[150px] sm:max-w-none">
+                        <span className="font-mono text-[10px] sm:text-[11px] bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-600 dark:text-slate-300 truncate max-w-[200px] sm:max-w-none">
                           Ref: {tx.reference.slice(0, 16)}
                         </span>
                       )}
