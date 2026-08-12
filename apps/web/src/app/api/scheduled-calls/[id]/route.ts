@@ -42,6 +42,20 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       return NextResponse.json({ error: "Students can only cancel or dispute calls" }, { status: 400 });
     }
 
+    // Block last-minute student cancellations
+    if (session.role === "STUDENT" && status === "CANCELLED" && (call.status === "CONFIRMED" || call.status === "ACCEPTED")) {
+      const now = new Date();
+      const twelveHoursFromNow = new Date(now.getTime() + 12 * 60 * 60 * 1000);
+      if (call.scheduledAt < twelveHoursFromNow) {
+        return NextResponse.json({ error: "Cannot cancel a confirmed call within 12 hours of start time. Please dispute the call after it starts if there is an issue." }, { status: 403 });
+      }
+    }
+
+    // Validate COMPLETED transition (block hacking)
+    if (status === "COMPLETED" && call.status !== "CONFIRMED" && call.status !== "ACCEPTED") {
+      return NextResponse.json({ error: "Only confirmed calls can be marked as completed" }, { status: 400 });
+    }
+
     // If it's already cancelled or rejected, don't refund again
     if ((status === "REJECTED" || status === "CANCELLED") && (call.status === "PENDING" || call.status === "CONFIRMED")) {
       // Cancel Google Calendar event if it exists
@@ -126,6 +140,47 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
           data: { status },
         });
       });
+      return NextResponse.json({ success: true, call: updated });
+    }
+
+    // Handle DISPUTED when already COMPLETED (freeze the funds by reversing them)
+    if (status === "DISPUTED" && call.status === "COMPLETED") {
+      const updated = await prisma.$transaction(async (tx) => {
+        const defaultCommission = await getPlatformConfigNumber(CONFIG_KEYS.PLATFORM_COMMISSION_RATE);
+        const commissionRate = call.mentor.mentorProfile?.commissionRate ?? defaultCommission;
+        const platformCommission = call.estimatedCost * (commissionRate / 100);
+        const mentorEarnings = call.estimatedCost - platformCommission;
+
+        if (call.mentor.wallet) {
+          await tx.wallet.update({
+            where: { id: call.mentor.wallet.id },
+            data: { balance: { decrement: mentorEarnings } },
+          });
+
+          await tx.transaction.create({
+            data: {
+              walletId: call.mentor.wallet.id,
+              type: "DEBIT",
+              amount: mentorEarnings,
+              description: `Dispute Hold: Earnings temporarily frozen for admin review`,
+            },
+          });
+        }
+
+        return await tx.scheduledChat.update({
+          where: { id },
+          data: { status: "DISPUTED" },
+        });
+      });
+
+      await dispatchNotification({
+        userId: call.mentorId,
+        title: "⚠️ Call Disputed",
+        message: `Your scheduled call with ${call.student.name} has been disputed. Your earnings have been temporarily frozen pending admin review.`,
+        type: "BOOKING",
+        link: "/mentor-dashboard",
+      });
+
       return NextResponse.json({ success: true, call: updated });
     }
 

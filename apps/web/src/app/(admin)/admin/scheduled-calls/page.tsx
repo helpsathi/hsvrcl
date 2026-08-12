@@ -114,6 +114,30 @@ export default function AdminScheduledCallsPage() {
     }
   }
 
+  async function handleResolveDispute(callId: string, resolution: "MENTOR" | "STUDENT") {
+    if (!confirm(`Are you sure you want to resolve this dispute by siding with the ${resolution}? This action is irreversible and will distribute the funds accordingly.`)) return;
+    
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/admin/scheduled-calls/${callId}/resolve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resolution }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setFeedback({ type: "success", text: `Dispute resolved in favor of the ${resolution.toLowerCase()}.` });
+        fetchCalls();
+      } else {
+        setFeedback({ type: "error", text: data.error || "Failed to resolve dispute" });
+        setLoading(false);
+      }
+    } catch (e) {
+      setFeedback({ type: "error", text: "Network error while resolving dispute" });
+      setLoading(false);
+    }
+  }
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {/* Header */}
@@ -195,7 +219,7 @@ export default function AdminScheduledCallsPage() {
       <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
         {/* Status Tabs */}
         <div className="flex flex-wrap rounded-xl bg-slate-100 dark:bg-slate-800 p-1">
-          {["ALL", "CONFIRMED", "PENDING", "COMPLETED", "CANCELLED", "REJECTED"].map((st) => (
+          {["ALL", "CONFIRMED", "PENDING", "COMPLETED", "CANCELLED", "REJECTED", "DISPUTED"].map((st) => (
             <button
               key={st}
               onClick={() => { setStatusFilter(st); setPage(1); }}
@@ -310,10 +334,25 @@ export default function AdminScheduledCallsPage() {
                       )}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      {c.status === "CONFIRMED" || c.status === "PENDING" ? (
+                      {c.status === "DISPUTED" ? (
+                        <div className="flex flex-col gap-1 items-end">
+                          <button
+                            onClick={() => handleResolveDispute(c.id, "MENTOR")}
+                            className="px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900 border border-emerald-200 dark:border-emerald-800 text-[11px] font-bold transition whitespace-nowrap"
+                          >
+                            Side with Mentor
+                          </button>
+                          <button
+                            onClick={() => handleResolveDispute(c.id, "STUDENT")}
+                            className="px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900 border border-rose-200 dark:border-rose-800 text-[11px] font-bold transition whitespace-nowrap"
+                          >
+                            Side with Student
+                          </button>
+                        </div>
+                      ) : c.status === "CONFIRMED" || c.status === "PENDING" ? (
                         <button
                           onClick={() => setCancelModalCall(c)}
-                          className="px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900 border border-rose-200 dark:border-rose-800 text-[11px] font-bold transition"
+                          className="px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900 border border-rose-200 dark:border-rose-800 text-[11px] font-bold transition whitespace-nowrap"
                         >
                           Cancel Call
                         </button>
