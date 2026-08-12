@@ -18,7 +18,7 @@ interface ScheduledCallItem {
   id: string;
   scheduledAt: string;
   durationMinutes: number;
-  status: "PENDING" | "CONFIRMED" | "CANCELLED" | "COMPLETED" | "MISSED" | "RESCHEDULED" | "ACCEPTED" | "REJECTED";
+  status: "PENDING" | "CONFIRMED" | "CANCELLED" | "COMPLETED" | "MISSED" | "RESCHEDULED" | "ACCEPTED" | "REJECTED" | "DISPUTED";
   notes?: string;
   estimatedCost: number;
   meetLink?: string;
