@@ -11,17 +11,26 @@ export async function POST(req: Request) {
 
     const now = new Date();
     
-    // 1. Mark PENDING calls as MISSED if more than an hour past scheduled time
+    // 1. Mark PENDING calls as MISSED if more than 15 minutes past scheduled time
+    //    (Mentor failed to accept before the meeting time)
     const missedCalls = await prisma.scheduledChat.findMany({
       where: {
-        status: "PENDING",
-        scheduledAt: { lt: new Date(now.getTime() - 60 * 60 * 1000) }
+        status: { in: ["PENDING", "ACCEPTED"] },
+        scheduledAt: { lt: new Date(now.getTime() - 15 * 60 * 1000) }
       },
       include: { student: { include: { wallet: true } } }
     });
 
+    // For ACCEPTED calls, only mark as MISSED if the entire call duration + 15 min buffer has passed
+    const filteredMissedCalls = missedCalls.filter(call => {
+      if (call.status === "PENDING") return true; // PENDING + 15 min past = definitely missed
+      // For ACCEPTED: check if scheduledAt + durationMinutes + 15 min buffer has passed
+      const callEndWithBuffer = new Date(call.scheduledAt.getTime() + (call.durationMinutes + 15) * 60000);
+      return now >= callEndWithBuffer;
+    });
+
     const updatedMissed = [];
-    for (const call of missedCalls) {
+    for (const call of filteredMissedCalls) {
       const updated = await prisma.$transaction(async (tx) => {
         if (call.student.wallet) {
           await tx.wallet.update({

@@ -266,9 +266,15 @@ io.on('connection', (socket) => {
       }
 
       // Check if student has active subscription
+      // Look up the mentor's profile ID to scope the subscription correctly
+      const mentorProfile = await prisma.mentorProfile.findUnique({
+        where: { userId: session.mentorId },
+        select: { id: true },
+      });
       const activeSub = await prisma.subscription.findFirst({
         where: {
           studentId: session.studentId,
+          mentorId: mentorProfile?.id || "__none__",
           isActive: true,
           endDate: { gt: new Date() },
         },

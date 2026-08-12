@@ -71,26 +71,54 @@ export function GlobalChatNotification() {
     }, 4500);
   }, []);
 
-  // Web Push Permission Prompt Check (Snoozed 30 days if dismissed)
+  // Web Push Subscription & Permission Check (Snoozed 1 day if dismissed)
   useEffect(() => {
     if (!user) return;
 
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker
-        .register("/sw.js")
-        .then((reg) => console.log("SW Registered with scope:", reg.scope))
-        .catch((err) => console.error("SW Registration failed:", err));
-    }
-
-    if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
-      const dismissedUntil = localStorage.getItem("push_prompt_dismissed_until");
-      const isDismissed = dismissedUntil && Number(dismissedUntil) > Date.now();
-      if (!isDismissed) {
-        // Show gentle prompt after 6 seconds
-        const timer = setTimeout(() => setShowPermissionPrompt(true), 6000);
-        return () => clearTimeout(timer);
+    const checkPushSubscription = async () => {
+      if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+      
+      try {
+        const reg = await navigator.serviceWorker.register("/sw.js");
+        const sub = await reg.pushManager.getSubscription();
+        
+        // If not actively subscribed to our backend
+        if (!sub) {
+          if (Notification.permission === "granted") {
+            // They previously granted permission, but the subscription was lost (e.g. cleared browser data)
+            // Silently auto-subscribe them in the background
+            if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) {
+              const newSub = await reg.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+              });
+              await fetch("/api/notifications/subscribe", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  endpoint: newSub.endpoint,
+                  keys: {
+                    p256dh: btoa(String.fromCharCode(...new Uint8Array(newSub.getKey("p256dh")!))),
+                    auth: btoa(String.fromCharCode(...new Uint8Array(newSub.getKey("auth")!))),
+                  },
+                }),
+              });
+            }
+          } else if (Notification.permission === "default") {
+            const dismissedUntil = localStorage.getItem("push_prompt_dismissed_until");
+            const isDismissed = dismissedUntil && Number(dismissedUntil) > Date.now();
+            if (!isDismissed) {
+              // Show gentle prompt after 2 seconds
+              setTimeout(() => setShowPermissionPrompt(true), 2000);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Push subscription check failed:", err);
       }
-    }
+    };
+
+    checkPushSubscription();
   }, [user]);
 
   // Persistent, Single-Session Socket Connection
@@ -214,16 +242,16 @@ export function GlobalChatNotification() {
         }
       } else {
         setShowPermissionPrompt(false);
-        // Snooze for 30 days
-        localStorage.setItem("push_prompt_dismissed_until", (Date.now() + 30 * 86400000).toString());
+        // Snooze for 1 day
+        localStorage.setItem("push_prompt_dismissed_until", (Date.now() + 86400000).toString());
       }
     }
   };
 
   const handleDismissPrompt = () => {
     setShowPermissionPrompt(false);
-    // Snooze for 30 days
-    localStorage.setItem("push_prompt_dismissed_until", (Date.now() + 30 * 86400000).toString());
+    // Snooze for 1 day
+    localStorage.setItem("push_prompt_dismissed_until", (Date.now() + 86400000).toString());
   };
 
   const getIconForType = (type?: string) => {

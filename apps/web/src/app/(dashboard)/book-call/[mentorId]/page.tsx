@@ -109,6 +109,7 @@ export default function BookCallPage() {
     const [hStr, mStr] = slot.split(":");
     const slotH = parseInt(hStr, 10);
     const slotM = parseInt(mStr, 10);
+    const slotEndTotalMins = slotH * 60 + slotM + selectedDuration;
 
     // Enforce dynamic advance booking notice for same-day requests
     const now = new Date();
@@ -130,7 +131,7 @@ export default function BookCallPage() {
       const slotTotal = slotH * 60 + slotM;
       const startTotal = avail.startHour * 60 + avail.startMin;
       const endTotal = avail.endHour * 60 + avail.endMin;
-      return slotTotal >= startTotal && slotTotal < endTotal;
+      return slotTotal >= startTotal && slotEndTotalMins <= endTotal;
     });
   };
 

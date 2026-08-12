@@ -46,7 +46,13 @@ async function checkMentorAvailability(db: any, mentorProfile: any, start: Date,
   return slots.some((slot: any) => {
     const slotStart = slot.startHour * 60 + slot.startMin;
     const slotEnd = slot.endHour * 60 + slot.endMin;
-    return reqStart >= slotStart && reqEnd <= slotEnd;
+    if (slotEnd > slotStart) {
+      // Normal slot (e.g., 09:00 – 17:00)
+      return reqStart >= slotStart && reqEnd <= slotEnd;
+    } else {
+      // Midnight-spanning slot (e.g., 22:00 – 02:00)
+      return reqStart >= slotStart || reqEnd <= slotEnd;
+    }
   });
 }
 

@@ -43,7 +43,7 @@ export async function GET(req: Request) {
         // Cap maximum single chat duration at 12 hours (720 mins) as a failsafe against orphaned sessions
         if (elapsedMinutes >= 720) {
           shouldEnd = true;
-        } else {
+        } else if (session.perMinuteRate > 0) {
           // Check if cost has exceeded available wallet balance
           const cost = session.isFreeTrial
             ? Math.max(0, (elapsedMinutes - maxFreeMins) * session.perMinuteRate)

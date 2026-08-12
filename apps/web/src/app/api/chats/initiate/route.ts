@@ -84,41 +84,68 @@ export async function POST(req: Request) {
       }
     }
 
-    if (mentorProfile.availabilitySlots && mentorProfile.availabilitySlots.length > 0) {
+    // ── EARLY subscription check (must happen BEFORE availability gating) ──
+    const allSubs = await prisma.subscription.findMany({
+      where: {
+        studentId: session.userId,
+        mentorId: mentorProfile.id,
+      },
+      orderBy: { endDate: "desc" }
+    });
+
+    let isSubscribed = false;
+    let subscriptionStatus: "ACTIVE" | "EXPIRED" | "CANCELLED" | "NONE" = "NONE";
+
+    if (allSubs.length > 0) {
+      const latestSub = allSubs[0];
       const now = new Date();
-      const currentDay = now.getDay(); // 0=Sun..6=Sat
-      const currentTime = now.getHours() * 60 + now.getMinutes();
+      if (latestSub.isActive && latestSub.endDate > now) {
+        isSubscribed = true;
+        subscriptionStatus = "ACTIVE";
+      } else if (!latestSub.isActive && latestSub.endDate > now) {
+        subscriptionStatus = "CANCELLED";
+      } else {
+        subscriptionStatus = "EXPIRED";
+      }
+    }
+
+    // Only enforce availability hours for non-subscribed, non-admin users
+    if (!isSubscribed && session.role !== "ADMIN" && mentorProfile.availabilitySlots && mentorProfile.availabilitySlots.length > 0) {
+      const now = new Date();
+      // Convert UTC to IST (+5:30) before extracting day/time — availability slots are stored in IST
+      const istOffset = 5.5 * 60 * 60 * 1000;
+      const nowIST = new Date(now.getTime() + istOffset);
+      const currentDay = nowIST.getUTCDay(); // 0=Sun..6=Sat in IST
+      const currentTime = nowIST.getUTCHours() * 60 + nowIST.getUTCMinutes();
 
       const activeSlotsToday = mentorProfile.availabilitySlots.filter(
         (s: any) => s.isActive && s.dayOfWeek === currentDay
       );
 
-      if (session.role !== "ADMIN") {
-        if (activeSlotsToday.length === 0) {
+      if (activeSlotsToday.length === 0) {
+        return NextResponse.json({
+          error: "The mentor is not available today. Please check back another day or book a 1:1 call!"
+        }, { status: 400 });
+      } else {
+        const isWithinHours = activeSlotsToday.some((s: any) => {
+          const start = s.startHour * 60 + s.startMin;
+          const end = s.endHour * 60 + s.endMin;
+          return currentTime >= start && currentTime <= end;
+        });
+
+        if (!isWithinHours) {
+          const formatTime = (h: number, m: number) => {
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            const hours = h % 12 || 12;
+            const mins = m < 10 ? `0${m}` : m;
+            return `${hours}:${mins} ${ampm}`;
+          };
+          const timeStrings = activeSlotsToday.map((s: any) => `${formatTime(s.startHour, s.startMin)} to ${formatTime(s.endHour, s.endMin)}`);
+          const timeMsg = timeStrings.join(" and ");
+
           return NextResponse.json({
-            error: "The mentor is not available today. Please check back another day or book a 1:1 call!"
+            error: `The mentor is only available today from ${timeMsg}. Please wait until then or book a 1:1 call instead!`
           }, { status: 400 });
-        } else {
-          const isWithinHours = activeSlotsToday.some((s: any) => {
-            const start = s.startHour * 60 + s.startMin;
-            const end = s.endHour * 60 + s.endMin;
-            return currentTime >= start && currentTime <= end;
-          });
-
-          if (!isWithinHours) {
-            const formatTime = (h: number, m: number) => {
-              const ampm = h >= 12 ? 'PM' : 'AM';
-              const hours = h % 12 || 12;
-              const mins = m < 10 ? `0${m}` : m;
-              return `${hours}:${mins} ${ampm}`;
-            };
-            const timeStrings = activeSlotsToday.map((s: any) => `${formatTime(s.startHour, s.startMin)} to ${formatTime(s.endHour, s.endMin)}`);
-            const timeMsg = timeStrings.join(" and ");
-
-            return NextResponse.json({
-              error: `The mentor is only available today from ${timeMsg}. Please wait until then or book a 1:1 call instead!`
-            }, { status: 400 });
-          }
         }
       }
     }
@@ -158,30 +185,7 @@ export async function POST(req: Request) {
       mentorProfile.freeTrial &&
       (student.freeTrialChatsUsed ?? 0) < maxFreeTrialChats;
 
-    // Check for subscriptions using MentorProfile ID
-    const allSubs = await prisma.subscription.findMany({
-      where: {
-        studentId: session.userId,
-        mentorId: mentorProfile.id,
-      },
-      orderBy: { endDate: "desc" }
-    });
-
-    let isSubscribed = false;
-    let subscriptionStatus: "ACTIVE" | "EXPIRED" | "CANCELLED" | "NONE" = "NONE";
-
-    if (allSubs.length > 0) {
-      const latestSub = allSubs[0];
-      const now = new Date();
-      if (latestSub.isActive && latestSub.endDate > now) {
-        isSubscribed = true;
-        subscriptionStatus = "ACTIVE";
-      } else if (!latestSub.isActive && latestSub.endDate > now) {
-        subscriptionStatus = "CANCELLED";
-      } else {
-        subscriptionStatus = "EXPIRED";
-      }
-    }
+    // (Subscription check moved above availability check)
 
     let perMinuteRate = mentorProfile.perMinutePrice ?? 15;
 

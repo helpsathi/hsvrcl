@@ -160,6 +160,7 @@ export default function ScheduledCallsPage() {
               const diffMs = scheduledDate.getTime() - now.getTime();
               const diffMinutes = diffMs / (1000 * 60);
               const canJoin = call.status === "CONFIRMED" && diffMinutes <= 5 && diffMinutes >= -call.durationMinutes;
+              const isPastPending = call.status === "PENDING" && diffMs < 0;
 
               return (
                 <div key={call.id} className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-5 sm:p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xl flex flex-col md:flex-row gap-5 justify-between items-start md:items-center transition-colors">
@@ -185,7 +186,8 @@ export default function ScheduledCallsPage() {
 
                   <div className="flex flex-col items-end gap-3 w-full md:w-auto shrink-0 border-t md:border-t-0 border-slate-100 dark:border-slate-800 pt-3 md:pt-0">
                     <div className="flex items-center gap-2">
-                      {call.status === "PENDING" && <span className="px-3 py-1 bg-amber-500/15 text-amber-600 dark:text-amber-300 border border-amber-500/30 text-xs font-black rounded-full uppercase tracking-wider">Requested</span>}
+                      {call.status === "PENDING" && !isPastPending && <span className="px-3 py-1 bg-amber-500/15 text-amber-600 dark:text-amber-300 border border-amber-500/30 text-xs font-black rounded-full uppercase tracking-wider">Requested</span>}
+                      {isPastPending && <span className="px-3 py-1 bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30 text-xs font-black rounded-full uppercase tracking-wider">Expired (No Response)</span>}
                       {(call.status === "CONFIRMED" || call.status === "ACCEPTED") && <span className="px-3 py-1 bg-blue-500/15 text-blue-600 dark:text-blue-300 border border-blue-500/30 text-xs font-black rounded-full uppercase tracking-wider">Confirmed</span>}
                       {call.status === "COMPLETED" && <span className="px-3 py-1 bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 border border-emerald-500/30 text-xs font-black rounded-full uppercase tracking-wider">Completed</span>}
                       {call.status === "RESCHEDULED" && <span className="px-3 py-1 bg-purple-500/15 text-purple-600 dark:text-purple-300 border border-purple-500/30 text-xs font-black rounded-full uppercase tracking-wider">Rescheduled</span>}
@@ -268,7 +270,7 @@ export default function ScheduledCallsPage() {
                         </button>
                       )}
 
-                      {call.status === "PENDING" && isMentor && (
+                      {call.status === "PENDING" && isMentor && !isPastPending && (
                         <>
                           <button 
                             disabled={processingId === call.id}
