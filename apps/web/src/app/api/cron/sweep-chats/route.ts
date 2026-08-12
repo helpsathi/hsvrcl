@@ -17,6 +17,10 @@ export async function GET(req: Request) {
       where: { status: "ACTIVE" },
       include: {
         student: { include: { wallet: true } },
+        messages: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
       },
     });
 
@@ -40,8 +44,16 @@ export async function GET(req: Request) {
         const elapsedMs = now - session.firstMessageTime.getTime();
         const elapsedMinutes = Math.floor(elapsedMs / 60000);
 
-        // Cap maximum single chat duration at 12 hours (720 mins) as a failsafe against orphaned sessions
-        if (elapsedMinutes >= 720) {
+        const lastMessageTime = session.messages.length > 0 
+          ? session.messages[0].createdAt.getTime() 
+          : session.firstMessageTime.getTime();
+        
+        const timeSinceLastMsg = now - lastMessageTime;
+
+        // Auto-close if neither person has sent a message in 15 minutes
+        if (timeSinceLastMsg > 15 * 60 * 1000) {
+          shouldEnd = true;
+        } else if (elapsedMinutes >= 720) {
           shouldEnd = true;
         } else if (session.perMinuteRate > 0) {
           // Check if cost has exceeded available wallet balance
