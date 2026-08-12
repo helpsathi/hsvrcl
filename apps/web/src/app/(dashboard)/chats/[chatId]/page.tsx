@@ -98,6 +98,20 @@ export default function ChatRoomPage() {
   const [mentorProfileId, setMentorProfileId] = useState<string | null>(null);
   const [mentorMonthlyPrice, setMentorMonthlyPrice] = useState<number>(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
+  const touchTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleTouchStart = (msgId: string) => {
+    if (touchTimerRef.current) clearTimeout(touchTimerRef.current);
+    touchTimerRef.current = setTimeout(() => {
+      setSelectedMessageId(msgId);
+    }, 500);
+  };
+
+  const handleTouchEnd = () => {
+    if (touchTimerRef.current) clearTimeout(touchTimerRef.current);
+  };
 
   // Timer state
   const [timerStarted, setTimerStarted] = useState(false);
@@ -203,6 +217,10 @@ export default function ChatRoomPage() {
 
         socketRef.current.on("message_deleted", (updatedMsg: Message) => {
           setMessages((prev) => prev.map(m => m.id === updatedMsg.id ? updatedMsg : m));
+        });
+
+        socketRef.current.on("chat_cleared", () => {
+          setMessages([]);
         });
 
         socketRef.current.on("timer_started", (data: { firstMessageTime: string; isFreeTrial: boolean }) => {
@@ -441,6 +459,21 @@ export default function ChatRoomPage() {
     }
   };
 
+  const handleClearChat = async () => {
+    if (!chat || chat.status !== "ACTIVE") return;
+    if (!confirm("Are you sure you want to clear all messages? This action is irreversible and will delete messages for both sides.")) return;
+    try {
+      const res = await fetch(`/api/chats/${chatId}/clear`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      setMessages([]);
+      socketRef.current?.emit("clear_chat", { sessionId: chatId });
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+
   const formatTime = (secs: number) => {
     const m = Math.floor(secs / 60).toString().padStart(2, "0");
     const s = (secs % 60).toString().padStart(2, "0");
@@ -585,6 +618,15 @@ export default function ChatRoomPage() {
               </button>
               
               <button
+                onClick={handleClearChat}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold text-sm shadow-sm transition-all bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-rose-100 hover:text-rose-600 dark:hover:bg-rose-900/30 dark:hover:text-rose-400"
+                title="Clear Chat"
+              >
+                <Trash weight="bold" className="text-lg" />
+                <span className="hidden md:inline">Clear Chat</span>
+              </button>
+              
+              <button
                 onClick={handleEndChat}
                 disabled={ending}
                 className="text-rose-500 hover:text-white hover:bg-rose-500 p-2 rounded-full transition-colors ml-1"
@@ -651,7 +693,10 @@ export default function ChatRoomPage() {
       )}
 
       {/* Messages Thread */}
-      <div className="flex-1 overflow-y-auto relative z-10 flex flex-col no-scrollbar">
+      <div 
+        className="flex-1 overflow-y-auto relative z-10 flex flex-col no-scrollbar"
+        onClick={() => setSelectedMessageId(null)}
+      >
         <div className="w-full max-w-6xl mx-auto px-4 md:px-8 py-6 flex flex-col">
           
           {/* Banner Badges & Historical Purged Sessions */}
@@ -729,7 +774,18 @@ export default function ChatRoomPage() {
             
             return (
               <div key={msg.id} className={`flex w-full group ${isMine ? "justify-end" : "justify-start"} ${isFirstInCluster && index !== 0 ? "mt-4" : "mt-1.5"} animate-in slide-in-from-bottom-2 fade-in duration-300`}>
-                <div className={`relative flex max-w-[85%] md:max-w-[70%] ${isMine ? "flex-row-reverse" : "flex-row"} items-end gap-2`}>
+                <div 
+                  className={`relative flex max-w-[85%] md:max-w-[70%] ${isMine ? "flex-row-reverse" : "flex-row"} items-end gap-2`}
+                  onTouchStart={() => isMine && handleTouchStart(msg.id)}
+                  onTouchEnd={handleTouchEnd}
+                  onTouchMove={handleTouchEnd}
+                  onContextMenu={(e) => {
+                    if (isMine) {
+                      e.preventDefault();
+                      setSelectedMessageId(msg.id);
+                    }
+                  }}
+                >
                   
                   {!isMine && (
                     <div className="w-6 shrink-0 flex flex-col justify-end h-full">
@@ -800,7 +856,7 @@ export default function ChatRoomPage() {
                   </div>
                   {/* Edit / Delete Buttons */}
                   {isMine && !msg.isDeleted && (
-                    <div className="flex flex-col gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity absolute right-full mr-2 top-1/2 -translate-y-1/2">
+                    <div className={`flex flex-col gap-1 transition-opacity absolute right-full mr-2 top-1/2 -translate-y-1/2 ${selectedMessageId === msg.id ? "opacity-100" : "opacity-0 md:group-hover:opacity-100"}`}>
                       {!msg.content.startsWith("[IMAGE:") && !msg.content.startsWith("[PDF:") && (
                         <button 
                           onClick={() => {

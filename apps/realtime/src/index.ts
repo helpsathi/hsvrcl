@@ -459,6 +459,11 @@ io.on('connection', (socket) => {
     io.to(data.sessionId).emit('chat_terminated', { sessionId: data.sessionId, endedBy: data.endedBy });
   });
 
+  // Clear Chat Broadcast
+  socket.on('clear_chat', (data: { sessionId: string }) => {
+    io.to(data.sessionId).emit('chat_cleared');
+  });
+
   socket.on('disconnect', async () => {
     console.log(`User disconnected: ${socket.id}`);
     
