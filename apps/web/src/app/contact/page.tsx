@@ -64,10 +64,10 @@ export default function ContactPage() {
                 <h3 className="font-bold text-lg text-slate-900 dark:text-white">Email Support</h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Our dedicated team replies within 24 hours.</p>
                 <a
-                  href="mailto:helpsathi9119@gmail.com"
+                  href="mailto:support@helpsathi.com"
                   className="mt-3 inline-block font-semibold text-blue-600 dark:text-blue-400 hover:underline text-sm"
                 >
-                  helpsathi9119@gmail.com
+                  support@helpsathi.com
                 </a>
               </div>
             </div>

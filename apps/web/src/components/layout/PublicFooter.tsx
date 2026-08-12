@@ -16,14 +16,6 @@ export function PublicFooter() {
             <p className="text-slate-400 text-sm max-w-sm leading-relaxed">
               India&apos;s leading mentorship platform connecting ambitious students with verified top rankers, industry experts, and experienced mentors for 1-on-1 guidance and pay-per-minute consultations.
             </p>
-            <div className="flex items-center gap-3 pt-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> 100% Verified Mentors
-              </span>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                🔒 Secure Razorpay Payments
-              </span>
-            </div>
           </div>
 
           {/* Links Cols */}
@@ -50,7 +42,8 @@ export function PublicFooter() {
               <ul className="space-y-3 text-sm">
                 <li><Link href="/terms" className="hover:text-blue-400 transition-colors">Terms of Service</Link></li>
                 <li><Link href="/privacy" className="hover:text-blue-400 transition-colors">Privacy Policy</Link></li>
-                <li><Link href="/refund" className="hover:text-blue-400 transition-colors">Refund Policy</Link></li>
+                <li><Link href="/refund" className="hover:text-blue-400 transition-colors">Cancellation & Refund</Link></li>
+                <li><Link href="/shipping" className="hover:text-blue-400 transition-colors">Shipping & Exchange</Link></li>
               </ul>
             </div>
           </div>

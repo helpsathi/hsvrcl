@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { ToastProvider } from "@/components/providers/ToastProvider";
 import { GlobalChatNotification } from "@/components/notifications/GlobalChatNotification";
 import { PwaInstallPrompt } from "@/components/pwa/PwaInstallPrompt";
+import { Analytics } from "@vercel/analytics/next";
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -87,6 +88,7 @@ export default function RootLayout({
             </ToastProvider>
           </AuthProvider>
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );

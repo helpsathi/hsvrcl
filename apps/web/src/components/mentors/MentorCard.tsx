@@ -30,9 +30,10 @@ export interface MentorCardProps {
   onBook?: (mentorId: string) => void;
   onSubscribe?: (mentor: MentorProps) => void;
   isSelf?: boolean;
+  isSubscribed?: boolean;
 }
 
-export function MentorCard({ mentor, onChat, onCall, onBook, onSubscribe, isSelf: explicitIsSelf }: MentorCardProps) {
+export function MentorCard({ mentor, onChat, onCall, onBook, onSubscribe, isSelf: explicitIsSelf, isSubscribed }: MentorCardProps) {
   const { user: currentUser } = useAuth();
   const isSelf = explicitIsSelf ?? (currentUser?.id ? currentUser.id === mentor.id : false);
   const profileUrl = `/mentors/${mentor.profileId || mentor.id}`;
@@ -95,6 +96,11 @@ export function MentorCard({ mentor, onChat, onCall, onBook, onSubscribe, isSelf
               <div className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 rounded-lg px-2.5 py-1.5 inline-flex items-center gap-1.5 w-max mb-3 text-slate-600 dark:text-slate-300 text-xs font-semibold">
                 <Crown weight="fill" className="text-amber-500 text-sm shrink-0" />
                 <span>Your Plan: ₹{mentor.monthlyPrice}/mo</span>
+              </div>
+            ) : isSubscribed ? (
+              <div className="bg-emerald-50 dark:bg-emerald-950/70 border border-emerald-200 dark:border-emerald-700/80 rounded-lg px-2.5 py-1.5 inline-flex items-center gap-1.5 w-max mb-3 text-emerald-700 dark:text-emerald-300 text-xs font-semibold">
+                <Crown weight="fill" className="text-emerald-500 text-sm shrink-0" />
+                <span>Subscribed</span>
               </div>
             ) : (
               <button

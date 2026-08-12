@@ -333,6 +333,7 @@ function MentorsDirectoryContent() {
               onCall={handleCall}
               onBook={handleBook}
               onSubscribe={handleSubscribe}
+              isSubscribed={subscribedMentors.some(sm => sm.id === mentor.id || sm.profileId === mentor.id)}
             />
           ))
         ) : (

@@ -5,6 +5,7 @@ import { TextAnimate } from "@/components/magicui/text-animate";
 import { ScrollBasedVelocity } from "@/components/magicui/scroll-based-velocity";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { PublicNav } from "@/components/layout/PublicNav";
+import { HeroActions } from "@/components/layout/HeroActions";
 import { InstallAppButton } from "@/components/pwa/InstallAppButton";
 
 import { Metadata } from "next";
@@ -65,10 +66,7 @@ export default function LandingPage() {
               </div>
 
               <div className="flex flex-col sm:flex-row flex-wrap gap-3.5 mt-2">
-                <Link href="/login" className="bg-blue-600 text-white font-semibold px-8 py-4 rounded-xl shadow-lg hover:bg-blue-700 transition-all flex items-center justify-center gap-2 group">
-                  Find Your Mentor
-                  <span className="group-hover:translate-x-1 transition-transform">→</span>
-                </Link>
+                <HeroActions />
                 <InstallAppButton variant="hero" />
               </div>
             </div>
@@ -397,7 +395,8 @@ export default function LandingPage() {
                   <ul className="space-y-4">
                     <li><Link href="/terms" className="hover:text-blue-400 hover:translate-x-1 inline-block transition-transform duration-300">Terms of Service</Link></li>
                     <li><Link href="/privacy" className="hover:text-blue-400 hover:translate-x-1 inline-block transition-transform duration-300">Privacy Policy</Link></li>
-                    <li><Link href="/refund" className="hover:text-blue-400 hover:translate-x-1 inline-block transition-transform duration-300">Refund Policy</Link></li>
+                    <li><Link href="/refund" className="hover:text-blue-400 hover:translate-x-1 inline-block transition-transform duration-300">Cancellation & Refund</Link></li>
+                    <li><Link href="/shipping" className="hover:text-blue-400 hover:translate-x-1 inline-block transition-transform duration-300">Shipping & Exchange</Link></li>
                   </ul>
                 </div>
               </div>

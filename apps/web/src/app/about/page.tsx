@@ -50,29 +50,7 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* Stats Grid */}
-        <section className="py-12 bg-white dark:bg-slate-900/50 border-y border-slate-200/80 dark:border-slate-800">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-              <div className="p-6 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
-                <div className="text-3xl sm:text-4xl font-extrabold text-blue-600 dark:text-blue-400">100%</div>
-                <div className="text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400 mt-1">Verified Mentors</div>
-              </div>
-              <div className="p-6 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
-                <div className="text-3xl sm:text-4xl font-extrabold text-indigo-600 dark:text-indigo-400">50K+</div>
-                <div className="text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400 mt-1">Consultation Minutes</div>
-              </div>
-              <div className="p-6 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
-                <div className="text-3xl sm:text-4xl font-extrabold text-purple-600 dark:text-purple-400">4.9/5</div>
-                <div className="text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400 mt-1">Average Rating</div>
-              </div>
-              <div className="p-6 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
-                <div className="text-3xl sm:text-4xl font-extrabold text-emerald-600 dark:text-emerald-400">₹0</div>
-                <div className="text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400 mt-1">Free Trial Start</div>
-              </div>
-            </div>
-          </div>
-        </section>
+
 
         {/* How It Works */}
         <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">

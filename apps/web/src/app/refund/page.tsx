@@ -74,13 +74,13 @@ export default function RefundPolicyPage() {
             </div>
             <ul className="space-y-2.5 text-sm text-slate-600 dark:text-slate-300 list-disc pl-5 leading-relaxed">
               <li>
+                <strong>Successful Sessions:</strong> Once a chat session is successfully completed and mentorship is delivered, no refund is applicable.
+              </li>
+              <li>
+                <strong>Technical Issues & Disputes:</strong> If a chat session fails due to technical errors, or if there is mentor misconduct or unresponsiveness, you must report the issue to us within <strong>48 hours</strong> to be eligible for a refund.
+              </li>
+              <li>
                 <strong>Fair-Start Billing:</strong> Chat timers start only when the mentor sends their first response. No charges accrue during waiting or connection phases.
-              </li>
-              <li>
-                <strong>Technical Interruptions:</strong> If a chat session is terminated prematurely due to server outages, socket disconnects, or proven technical errors on Help Sathi&apos;s infrastructure, the deducted minutes for the affected duration will be promptly credited back to your wallet.
-              </li>
-              <li>
-                <strong>Mentor Misconduct / Inadequate Guidance:</strong> If a mentor fails to engage or engages in inappropriate behavior, report the session within <strong>24 hours</strong>. Our moderation team reviews the chat transcripts and will issue a full wallet adjustment upon validation.
               </li>
             </ul>
           </div>
@@ -95,13 +95,13 @@ export default function RefundPolicyPage() {
             </div>
             <ul className="space-y-2.5 text-sm text-slate-600 dark:text-slate-300 list-disc pl-5 leading-relaxed">
               <li>
-                <strong>Immediate Cancellation:</strong> You can cancel your monthly mentor subscription anytime from your Student Dashboard under &ldquo;My Mentors&rdquo;. Cancellation stops future auto-renewals.
+                <strong>General Policy:</strong> Once a subscription is purchased and successful mentorship begins, no refund is applicable for that billing cycle.
               </li>
               <li>
-                <strong>48-Hour Guarantee:</strong> If a mentor is completely unresponsive or unavailable during the first 48 hours of a newly purchased subscription, you are entitled to a 100% refund.
+                <strong>Disputes & Issues:</strong> If you face an issue (such as the mentor being completely unresponsive), you must report the dispute within <strong>48 hours</strong> of purchasing the subscription to get a refund.
               </li>
               <li>
-                <strong>Active Cycle Access:</strong> If cancelled after 48 hours, your subscription remains active until the end of the current 30-day billing cycle with no pro-rated cash refund.
+                <strong>Cancellations:</strong> You can cancel future auto-renewals anytime from your dashboard. However, there are no pro-rated refunds for active cycles if no issue is reported within the 48-hour window.
               </li>
             </ul>
           </div>
@@ -112,14 +112,17 @@ export default function RefundPolicyPage() {
               <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 flex items-center justify-center text-xl">
                 <ClockCounterClockwise weight="fill" />
               </div>
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white">4. Scheduled Calls & Google Meet Sessions</h2>
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white">4. Appointments & Scheduled Calls</h2>
             </div>
             <ul className="space-y-2.5 text-sm text-slate-600 dark:text-slate-300 list-disc pl-5 leading-relaxed">
               <li>
-                <strong>Student Cancellation:</strong> Calls cancelled at least <strong>4 hours prior</strong> to the scheduled start time will receive a 100% wallet refund. Cancellations made with less than 4 hours notice are non-refundable to respect mentor schedule commitments.
+                <strong>Successful Appointments:</strong> Once a scheduled call or appointment is successfully completed, no refund is applicable.
               </li>
               <li>
-                <strong>Mentor No-Show:</strong> If a mentor fails to join the Google Meet session within 10 minutes of the scheduled time, the student receives a full 100% refund plus a priority rebooking credit.
+                <strong>Mentor No-Show & Issues:</strong> If a mentor fails to join the Google Meet session or there is a major issue, you must report the dispute within <strong>48 hours</strong> of the scheduled time to claim a full refund.
+              </li>
+              <li>
+                <strong>Student Cancellation:</strong> Calls cancelled at least <strong>4 hours prior</strong> to the scheduled start time will receive a 100% wallet refund. Cancellations made with less than 4 hours notice are non-refundable.
               </li>
             </ul>
           </div>

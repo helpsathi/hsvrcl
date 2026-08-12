@@ -494,6 +494,7 @@ export default function DashboardHome() {
                 onCall={handleCall}
                 onBook={handleBook}
                 onSubscribe={handleSubscribe}
+                isSubscribed={true}
               />
             ))}
           </div>
@@ -639,6 +640,7 @@ export default function DashboardHome() {
               onCall={handleCall}
               onBook={handleBook}
               onSubscribe={handleSubscribe}
+              isSubscribed={subscribedMentors.some(sm => sm.id === mentor.id || sm.profileId === mentor.id)}
             />
           ))
         ) : (

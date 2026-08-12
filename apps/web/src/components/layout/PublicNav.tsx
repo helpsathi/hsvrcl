@@ -69,13 +69,13 @@ export function PublicNav() {
                 <SignOut size={18} weight="bold" />
                 <span>Logout</span>
               </button>
-              <Link
+              <a
                 href={dashboardUrl}
                 className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-4 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm rounded-xl font-bold shadow-md shadow-blue-500/20 hover:shadow-blue-500/30 transition-all whitespace-nowrap active:scale-[0.98]"
               >
                 <UserCircle size={20} weight="fill" />
                 <span>Dashboard</span>
-              </Link>
+              </a>
             </>
           ) : (
             <>
@@ -136,14 +136,14 @@ export function PublicNav() {
                   <SignOut size={18} weight="bold" />
                   <span>Logout</span>
                 </button>
-                <Link
+                <a
                   href={dashboardUrl}
                   onClick={() => setMobileMenuOpen(false)}
                   className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm"
                 >
                   <UserCircle size={18} weight="fill" />
                   <span>Dashboard</span>
-                </Link>
+                </a>
               </>
             ) : (
               <>
