@@ -31,9 +31,11 @@ app.use(express.json());
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: frontendOrigin,
+    origin: "*", // Fix: Allow all origins to bypass Render/Vercel CORS issues (secured via JWT)
     methods: ['GET', 'POST'],
   },
+  pingInterval: 25000,
+  pingTimeout: 60000, // Fix: Prevent Render proxy from dropping idle websocket connections
 });
 
 const connectionString = process.env.DATABASE_URL;

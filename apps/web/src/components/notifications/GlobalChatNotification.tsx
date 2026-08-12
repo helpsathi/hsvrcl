@@ -143,6 +143,10 @@ export function GlobalChatNotification() {
 
         socket.emit("user_online", user.id);
 
+        socket.on("connect_error", (err: any) => {
+          console.error("Global socket connection error:", err.message || err);
+        });
+
         // 1. Incoming chat message handler
         socket.on("receive_message", (msg: { sessionId?: string; senderId: string; content: string; createdAt?: string }) => {
           if (msg.senderId === user.id) return;

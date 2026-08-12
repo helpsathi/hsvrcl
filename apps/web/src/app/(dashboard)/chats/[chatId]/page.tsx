@@ -176,7 +176,8 @@ export default function ChatRoomPage() {
           setIsConnected(false);
         });
 
-        socketRef.current.on("connect_error", () => {
+        socketRef.current.on("connect_error", (err: any) => {
+          console.error("Socket connection error:", err.message || err);
           setIsConnected(false);
         });
 
