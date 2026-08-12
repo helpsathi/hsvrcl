@@ -191,14 +191,16 @@ export function Header() {
           setUnreadNotifCount(unread);
         }
       } catch (err) {
-        // Silently ignore background polling / abort errors
+        // Silently ignore background errors
       }
     };
     fetchNotifCount();
-    const interval = setInterval(fetchNotifCount, 20000);
+    
+    // Listen for real-time socket events instead of polling
+    window.addEventListener("refresh_header_notifications", fetchNotifCount);
     return () => {
       isMounted = false;
-      clearInterval(interval);
+      window.removeEventListener("refresh_header_notifications", fetchNotifCount);
     };
   }, [user]);
 
@@ -213,16 +215,16 @@ export function Header() {
           setBalance(data.wallet?.balance ?? 0);
         }
       } catch (err) {
-        // Silently ignore background polling / abort errors
+        // Silently ignore background errors
       }
     };
     fetchBalance();
     
-    // Poll every 30s to keep it fresh
-    const interval = setInterval(fetchBalance, 30000);
+    // Listen for real-time socket events instead of polling
+    window.addEventListener("refresh_header_wallet", fetchBalance);
     return () => {
       isMounted = false;
-      clearInterval(interval);
+      window.removeEventListener("refresh_header_wallet", fetchBalance);
     };
   }, [user]);
 

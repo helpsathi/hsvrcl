@@ -215,10 +215,11 @@ export async function PUT(req: Request) {
     if (subscribedBookingFree !== undefined) dataToUpdate.subscribedBookingFree = Boolean(subscribedBookingFree);
     if (bookingNoticeHours !== undefined) dataToUpdate.bookingNoticeHours = Number(bookingNoticeHours);
     if (personalMeetingLink !== undefined) {
-      if (personalMeetingLink && !/^https?:\/\//i.test(personalMeetingLink)) {
-        return NextResponse.json({ error: "Invalid URL. Must start with http:// or https://" }, { status: 400 });
+      let formattedLink = personalMeetingLink;
+      if (formattedLink && !/^https?:\/\//i.test(formattedLink)) {
+        formattedLink = `https://${formattedLink}`;
       }
-      dataToUpdate.personalMeetingLink = personalMeetingLink;
+      dataToUpdate.personalMeetingLink = formattedLink;
     }
 
     if (username !== undefined) {

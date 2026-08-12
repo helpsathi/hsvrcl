@@ -45,7 +45,19 @@ export async function GET(req: Request) {
     const [mentors, total] = await Promise.all([
       prisma.mentorProfile.findMany({
         where: whereClause,
-        include: {
+        select: {
+          id: true,
+          userId: true,
+          bio: true,
+          languages: true,
+          categories: true,
+          experience: true,
+          avgRating: true,
+          reviewCount: true,
+          isOnline: true,
+          perMinutePrice: true,
+          callPricePerMinute: true,
+          monthlyPrice: true,
           user: { select: { id: true, name: true, avatar: true } },
         },
         orderBy: { isOnline: "desc" }, // Online mentors first

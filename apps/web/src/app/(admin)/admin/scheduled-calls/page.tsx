@@ -11,7 +11,8 @@ import {
   CaretLeft, 
   CaretRight, 
   ArrowsClockwise,
-  ArrowSquareOut
+  ArrowSquareOut,
+  WarningCircle
 } from "@phosphor-icons/react";
 
 interface ScheduledCallItem {
@@ -312,6 +313,10 @@ export default function AdminScheduledCallsPage() {
                       ) : c.status === "REJECTED" ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
                           <XCircle weight="fill" /> Rejected
+                        </span>
+                      ) : c.status === "DISPUTED" ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-800 animate-pulse">
+                          <WarningCircle weight="fill" /> Disputed
                         </span>
                       ) : (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">

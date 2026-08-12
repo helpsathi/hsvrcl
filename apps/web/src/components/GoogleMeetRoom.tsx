@@ -44,7 +44,7 @@ export function GoogleMeetRoom({
   const [syncing, setSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
 
-  const isValidMeetLink = meetLink && meetLink.startsWith("http");
+  const isValidMeetLink = !!meetLink;
 
   const handleCopy = () => {
     if (!meetLink) return;
@@ -63,6 +63,10 @@ export function GoogleMeetRoom({
     }
     
     if (!newLink) return;
+
+    if (!newLink.startsWith("http://") && !newLink.startsWith("https://")) {
+      newLink = `https://${newLink}`;
+    }
 
     setSyncing(true);
     setSyncError(null);
@@ -141,7 +145,7 @@ export function GoogleMeetRoom({
         {isValidMeetLink ? (
           <div className="w-full space-y-4 max-w-lg">
             <a
-              href={meetLink || undefined}
+              href={meetLink ? (meetLink.startsWith("http://") || meetLink.startsWith("https://") ? meetLink : `https://${meetLink}`) : undefined}
               target="_blank"
               rel="noopener noreferrer"
               className="group relative flex items-center justify-center gap-3 w-full py-4 px-8 rounded-2xl font-bold text-base md:text-lg text-white shadow-xl overflow-hidden transition-all duration-300 bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 hover:from-emerald-500 hover:via-teal-500 hover:to-indigo-500 hover:scale-[1.02] active:scale-[0.98] border border-emerald-400/20"
@@ -181,9 +185,29 @@ export function GoogleMeetRoom({
             <h3 className="text-lg font-bold text-white mb-2">Meeting Setup Ready</h3>
             
             {isHost ? (
-              <p className="text-xs md:text-sm text-slate-300 mb-6 leading-relaxed">
-                Please provide the meeting link (Zoom, Google Meet, Teams) for this session below.
-              </p>
+              <div className="mt-4 text-left">
+                <p className="text-xs md:text-sm text-slate-300 mb-4 text-center leading-relaxed">
+                  Please provide the meeting link (Zoom, Google Meet, Teams) for this session.
+                </p>
+                <form onSubmit={handleSync} className="flex flex-col gap-3">
+                  <input
+                    type="text"
+                    required
+                    placeholder="meet.google.com/..."
+                    defaultValue={meetLink || ""}
+                    name="linkInput"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-brand-500 transition-colors"
+                  />
+                  <button
+                    type="submit"
+                    disabled={syncing || isGenerating}
+                    className="w-full py-3 bg-brand-600 hover:bg-brand-500 text-white font-bold text-sm rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {syncing || isGenerating ? <ArrowsClockwise className="animate-spin text-lg" /> : <Check className="text-lg" />}
+                    Save Meeting Link
+                  </button>
+                </form>
+              </div>
             ) : (
               <p className="text-xs md:text-sm text-slate-300 mb-6 leading-relaxed">
                 Waiting for the mentor to provide the meeting room link. Please refresh if you don't see it yet.
@@ -191,7 +215,7 @@ export function GoogleMeetRoom({
             )}
 
             {syncError && (
-              <div className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs text-left flex items-start gap-2">
+              <div className="mt-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs text-left flex items-start gap-2">
                 <WarningCircle weight="fill" className="text-rose-400 text-base shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
                   <p className="font-bold">Setup Failed</p>
@@ -202,22 +226,18 @@ export function GoogleMeetRoom({
           </div>
         )}
 
-        {isHost && onUpdateLink && (
+        {/* Update Link Section if it already exists */}
+        {isValidMeetLink && isHost && onUpdateLink && (
           <div className="mt-8 w-full max-w-lg p-5 rounded-2xl bg-slate-800/50 border border-slate-700 text-left">
             <label className="block text-xs font-bold text-slate-300 mb-2 uppercase tracking-wide">
-              {isValidMeetLink ? "Update Meeting Link" : "Set Meeting Link"}
+              Update Meeting Link
             </label>
             <form onSubmit={handleSync} className="flex gap-2">
               <input
-                type="url"
+                type="text"
                 required
-                placeholder="https://meet.google.com/..."
+                placeholder="meet.google.com/..."
                 defaultValue={meetLink || ""}
-                onChange={e => {
-                  const val = e.target.value;
-                  // We store the current input in a ref or state if needed, or pass it directly.
-                  // For simplicity, we can get it from the form element in handleSync.
-                }}
                 name="linkInput"
                 className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-brand-500 transition-colors"
               />
@@ -227,7 +247,7 @@ export function GoogleMeetRoom({
                 className="px-4 py-2.5 bg-brand-600 hover:bg-brand-500 text-white font-bold text-sm rounded-xl transition-colors disabled:opacity-50 flex items-center gap-2 shrink-0"
               >
                 {syncing || isGenerating ? <ArrowsClockwise className="animate-spin text-lg" /> : <Check className="text-lg" />}
-                Save
+                Update
               </button>
             </form>
           </div>

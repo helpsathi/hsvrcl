@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getPlatformConfigNumber, getPlatformConfigBoolean, CONFIG_KEYS } from "@/lib/config";
 
+export const revalidate = 3600; // Cache on Vercel Data Cache for 1 hour
+
 export async function GET() {
   try {
     const [
@@ -128,6 +130,10 @@ export async function GET() {
         minWalletRecharge: minWalletRecharge || 100,
         categories: categoryList,
       },
+    }, {
+      headers: {
+        "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400"
+      }
     });
   } catch (error) {
     console.error("GET /api/pricing error:", error);
@@ -150,6 +156,10 @@ export async function GET() {
         minWalletRecharge: 100,
         categories: [],
       },
+    }, {
+      headers: {
+        "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400"
+      }
     });
   }
 }

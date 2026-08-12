@@ -14,8 +14,13 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     const body = await req.json();
     const { meetLink } = body;
 
-    if (!meetLink || !/^https?:\/\//i.test(meetLink)) {
-      return NextResponse.json({ error: "Invalid meeting link. Must start with http:// or https://" }, { status: 400 });
+    if (!meetLink) {
+      return NextResponse.json({ error: "Missing meeting link" }, { status: 400 });
+    }
+
+    let formattedLink = meetLink;
+    if (!/^https?:\/\//i.test(formattedLink)) {
+      formattedLink = `https://${formattedLink}`;
     }
 
     const meeting = await prisma.groupMeeting.findUnique({
@@ -32,7 +37,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
     const updatedMeeting = await prisma.groupMeeting.update({
       where: { id },
-      data: { meetLink }
+      data: { meetLink: formattedLink }
     });
 
     return NextResponse.json({ success: true, meeting: updatedMeeting });

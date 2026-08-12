@@ -33,7 +33,8 @@ import {
   UsersThree,
   ClockCounterClockwise,
   Receipt,
-  Plug
+  Plug,
+  WarningCircle
 } from "@phosphor-icons/react";
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
@@ -75,6 +76,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     { name: "Wallets", href: "/admin/wallets", icon: Wallet, roles: ["SUPER_ADMIN", "ADMIN", "FINANCE"] },
     { name: "Chat Sessions", href: "/admin/chats", icon: ChatCircleDots, roles: ["SUPER_ADMIN", "ADMIN", "SUPPORT"] },
     { name: "Scheduled Calls", href: "/admin/scheduled-calls", icon: CalendarCheck, roles: ["SUPER_ADMIN", "ADMIN", "SUPPORT"] },
+    { name: "Disputes", href: "/admin/scheduled-calls?status=DISPUTED", icon: WarningCircle, roles: ["SUPER_ADMIN", "ADMIN", "SUPPORT"] },
     { name: "Payouts", href: "/admin/payouts", icon: CurrencyInr, roles: ["SUPER_ADMIN", "ADMIN", "SUPPORT", "FINANCE"] },
     { name: "Community Moderation", href: "/admin/community", icon: UsersThree, roles: ["SUPER_ADMIN", "ADMIN", "MODERATOR"] },
     { name: "Platform Settings", href: "/admin/config", icon: Gear, roles: ["SUPER_ADMIN", "ADMIN"] },

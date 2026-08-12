@@ -177,6 +177,20 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         link: "/mentor-dashboard",
       });
 
+      const admins = await prisma.user.findMany({
+        where: { OR: [{ role: "ADMIN" }, { adminSubRole: { not: null } }] },
+        select: { id: true }
+      });
+      for (const admin of admins) {
+        await dispatchNotification({
+          userId: admin.id,
+          title: "🚨 Dispute Raised",
+          message: `A scheduled call between ${call.student.name} and ${call.mentor.name} has been disputed (Funds frozen).`,
+          type: "SYSTEM",
+          link: "/admin/scheduled-calls?status=DISPUTED",
+        });
+      }
+
       return NextResponse.json({ success: true, call: updated });
     }
 
@@ -197,6 +211,20 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         type: "BOOKING",
         link: "/mentor-dashboard",
       });
+
+      const admins = await prisma.user.findMany({
+        where: { OR: [{ role: "ADMIN" }, { adminSubRole: { not: null } }] },
+        select: { id: true }
+      });
+      for (const admin of admins) {
+        await dispatchNotification({
+          userId: admin.id,
+          title: "🚨 Dispute Raised",
+          message: `A scheduled call between ${call.student.name} and ${call.mentor.name} has been disputed.`,
+          type: "SYSTEM",
+          link: "/admin/scheduled-calls?status=DISPUTED",
+        });
+      }
     }
 
     return NextResponse.json({ success: true, call: updated });

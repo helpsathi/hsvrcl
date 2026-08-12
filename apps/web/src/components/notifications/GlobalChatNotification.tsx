@@ -201,6 +201,16 @@ export function GlobalChatNotification() {
 
           addNotificationToast(newNotif);
           triggerOSNotification(payload.title, payload.message, payload.link || "/notifications", payload.type || "GENERAL");
+          
+          // Instantly refresh the header notification count
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new CustomEvent("refresh_header_notifications"));
+            
+            // Instantly refresh the header wallet balance if it's financial
+            if (payload.type === "PAYMENT" || payload.type === "PAYOUT" || payload.type === "WALLET_UPDATE") {
+              window.dispatchEvent(new CustomEvent("refresh_header_wallet"));
+            }
+          }
         });
       } catch (err) {
         console.error("Failed to initialize socket auth", err);
