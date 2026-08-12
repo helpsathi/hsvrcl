@@ -545,17 +545,10 @@ const schedulerInterval = setInterval(async () => {
     const secret = process.env.INTERNAL_API_SECRET || "";
     if (!secret) return;
 
-    // 2. Trigger automated sync and cleanup cron endpoints
+    // 2. Trigger consolidated background cron job
     const headers = { "Content-Type": "application/json", "x-internal-secret": secret };
-    await Promise.all([
-      fetch(`${apiUrl}/api/scheduled-calls/sync`, { method: "POST", headers }).catch(err => console.error("Scheduler call sync failed:", err)),
-      fetch(`${apiUrl}/api/cron/approve-reviews`, { method: "POST", headers }).catch(err => console.error("Scheduler approve reviews failed:", err)),
-      fetch(`${apiUrl}/api/cron/sweep-chats`, { method: "POST", headers }).catch(err => console.error("Scheduler sweep chats failed:", err)),
-      fetch(`${apiUrl}/api/cron/billing`, { method: "POST", headers }).catch(err => console.error("Scheduler billing failed:", err)),
-      fetch(`${apiUrl}/api/cron/subscriptions-renew`, { method: "GET", headers: { authorization: `Bearer ${process.env.CRON_SECRET || secret}` } }).catch(err => console.error("Scheduler subscriptions renew failed:", err)),
-      fetch(`${apiUrl}/api/cron/purge-expired-chats`, { method: "GET", headers: { authorization: `Bearer ${process.env.CRON_SECRET || secret}` } }).catch(err => console.error("Scheduler purge expired chats failed:", err)),
-      fetch(`${apiUrl}/api/cron/scheduled-messages`, { method: "GET", headers: { authorization: `Bearer ${process.env.CRON_SECRET || secret}` } }).catch(err => console.error("Scheduler scheduled messages failed:", err)),
-    ]);
+    await fetch(`${apiUrl}/api/cron/run-all`, { method: "POST", headers })
+      .catch(err => console.error("Scheduler run-all failed:", err));
 
     // 3. Deactivate expired subscriptions
     const now = new Date();
@@ -607,56 +600,12 @@ const schedulerInterval = setInterval(async () => {
   }
 }, 5 * 60 * 1000); // Run every 5 minutes
 
-// Hourly Cron Substitute (Bypasses Vercel free-tier cron limits)
-// Pings the web API to process automated payments and refunds every hour
-const hourlySyncInterval = setInterval(async () => {
-  try {
-    const webAppUrl = Array.isArray(frontendOrigin) 
-      ? frontendOrigin.find(url => url.includes('helpsathi.com')) || frontendOrigin[0] 
-      : frontendOrigin;
-      
-    if (webAppUrl && process.env.INTERNAL_API_SECRET) {
-      console.log(`[Hourly Cron] Triggering payment/refund sync at ${webAppUrl}...`);
-      await fetch(`${webAppUrl}/api/scheduled-calls/sync`, {
-        method: 'POST',
-        headers: {
-          'x-internal-secret': process.env.INTERNAL_API_SECRET
-        }
-      });
-    }
-  } catch (err) {
-    console.error("Error triggering hourly sync:", err);
-  }
-}, 60 * 60 * 1000); // Run every 60 minutes
 
-// Daily Cron Substitute
-// Pings the web API to process subscription cleanups once a day
-const dailyCleanupInterval = setInterval(async () => {
-  try {
-    const webAppUrl = Array.isArray(frontendOrigin) 
-      ? frontendOrigin.find(url => url.includes('helpsathi.com')) || frontendOrigin[0] 
-      : frontendOrigin;
-      
-    if (webAppUrl && process.env.INTERNAL_API_SECRET) {
-      console.log(`[Daily Cron] Triggering subscription cleanup at ${webAppUrl}...`);
-      await fetch(`${webAppUrl}/api/subscriptions/cleanup`, {
-        method: 'POST',
-        headers: {
-          'x-internal-secret': process.env.INTERNAL_API_SECRET
-        }
-      });
-    }
-  } catch (err) {
-    console.error("Error triggering daily cleanup:", err);
-  }
-}, 24 * 60 * 60 * 1000); // Run every 24 hours
 
 // L5: Graceful Shutdown handling
 const gracefulShutdown = (signal: string) => {
   console.log(`${signal} received: closing HTTP and Socket servers gracefully...`);
   clearInterval(schedulerInterval);
-  clearInterval(hourlySyncInterval);
-  clearInterval(dailyCleanupInterval);
   io.emit("server_shutdown", { message: "Server is restarting for updates. Please reconnect shortly." });
   io.close(() => {
     console.log("Socket.io closed.");

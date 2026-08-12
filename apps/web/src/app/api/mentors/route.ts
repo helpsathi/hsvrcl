@@ -82,6 +82,10 @@ export async function GET(req: Request) {
         limit,
         totalPages: Math.max(1, Math.ceil(total / limit))
       }
+    }, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=30'
+      }
     });
   } catch (error: any) {
     console.error("Fetch Mentors Error:", error);

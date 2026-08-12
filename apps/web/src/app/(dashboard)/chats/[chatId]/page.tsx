@@ -240,6 +240,12 @@ export default function ChatRoomPage() {
           setIsPrivate(data.isPrivate);
         });
 
+        socketRef.current.on("subscription_expired", (data: { status: "ACTIVE" | "CANCELLED" | "EXPIRED" | "NONE" }) => {
+          setSubExpiredDuringChat(true);
+          setSubStatus(data.status || "EXPIRED");
+          setChat(prev => prev ? { ...prev, isSubscribed: false, subscriptionStatus: data.status || "EXPIRED" } : prev);
+        });
+
         socketRef.current.on("error", (msg: string) => {
           setSendError(msg);
           setError(msg);
@@ -259,30 +265,6 @@ export default function ChatRoomPage() {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [chatId, user, startTimer]);
-
-  // Real-time polling every 60s during ACTIVE session to detect mid-session subscription expiration
-  useEffect(() => {
-    if (!chatId || !user || user.role !== "STUDENT") return;
-    const subPollInterval = setInterval(async () => {
-      try {
-        const res = await fetch(`/api/chats/${chatId}`);
-        const data = await res.json();
-        if (res.ok && data.chat) {
-          setChat(prev => {
-            if (prev && data.chat.isSubscribed === false && prev.isSubscribed) {
-              setSubExpiredDuringChat(true);
-              setSubStatus(data.chat.subscriptionStatus || "EXPIRED");
-              return { ...prev, isSubscribed: false, subscriptionStatus: data.chat.subscriptionStatus };
-            }
-            return prev;
-          });
-        }
-      } catch (e) {
-        // Silently catch background poll errors
-      }
-    }, 60000);
-    return () => clearInterval(subPollInterval);
-  }, [chatId, user]);
 
 
   // Auto-send a pending message passed via URL (subscribed user redirect flow)
