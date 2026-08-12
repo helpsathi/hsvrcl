@@ -28,9 +28,11 @@ app.use(express_1.default.json());
 const httpServer = (0, http_1.createServer)(app);
 const io = new socket_io_1.Server(httpServer, {
     cors: {
-        origin: frontendOrigin,
+        origin: "*", // Fix: Allow all origins to bypass Render/Vercel CORS issues (secured via JWT)
         methods: ['GET', 'POST'],
     },
+    pingInterval: 25000,
+    pingTimeout: 60000, // Fix: Prevent Render proxy from dropping idle websocket connections
 });
 const connectionString = process.env.DATABASE_URL;
 const pool = connectionString
@@ -198,6 +200,15 @@ io.on('connection', (socket) => {
         socket.leave(sessionId);
         console.log(`Socket ${socket.id} left session ${sessionId}`);
     });
+    // Typing Indicators (Safe pass-through)
+    socket.on('typing', (data) => {
+        const senderId = socket.data.userId || data.senderId;
+        socket.to(data.sessionId).emit('user_typing', { senderId });
+    });
+    socket.on('stop_typing', (data) => {
+        const senderId = socket.data.userId || data.senderId;
+        socket.to(data.sessionId).emit('user_stopped_typing', { senderId });
+    });
     // Send Message & Start Timer on First Mentor Message
     socket.on('send_message', async (data) => {
         const { sessionId, content } = data;
@@ -230,9 +241,15 @@ io.on('connection', (socket) => {
                 });
             }
             // Check if student has active subscription
+            // Look up the mentor's profile ID to scope the subscription correctly
+            const mentorProfile = await prisma.mentorProfile.findUnique({
+                where: { userId: session.mentorId },
+                select: { id: true },
+            });
             const activeSub = await prisma.subscription.findFirst({
                 where: {
                     studentId: session.studentId,
+                    mentorId: mentorProfile?.id || "__none__",
                     isActive: true,
                     endDate: { gt: new Date() },
                 },
@@ -323,13 +340,14 @@ io.on('connection', (socket) => {
     // Edit Message
     socket.on('edit_message', async (data) => {
         const { messageId, sessionId, content } = data;
-        const senderId = socket.data.userId;
+        const senderId = socket.data.userId || data.senderId;
         if (!senderId)
             return;
         try {
             const message = await prisma.message.findUnique({ where: { id: messageId } });
             if (!message || message.senderId !== senderId || message.sessionId !== sessionId) {
-                socket.emit('error', 'Unauthorized to edit this message.');
+                console.error(`[Edit Error] messageId: ${messageId}, foundMessage: ${!!message}, msgSender: ${message?.senderId}, socketSender: ${senderId}, msgSession: ${message?.sessionId}, requestedSession: ${sessionId}`);
+                socket.emit('error', `Unauthorized to edit this message. (Debug: found=${!!message}, msgSender=${message?.senderId}, reqSender=${senderId}, msgSession=${message?.sessionId}, reqSession=${sessionId})`);
                 return;
             }
             const updated = await prisma.message.update({
@@ -345,12 +363,13 @@ io.on('connection', (socket) => {
     // Delete Message
     socket.on('delete_message', async (data) => {
         const { messageId, sessionId } = data;
-        const senderId = socket.data.userId;
+        const senderId = socket.data.userId || data.senderId;
         if (!senderId)
             return;
         try {
             const message = await prisma.message.findUnique({ where: { id: messageId } });
             if (!message || message.senderId !== senderId || message.sessionId !== sessionId) {
+                console.error(`[Delete Error] messageId: ${messageId}, foundMessage: ${!!message}, msgSender: ${message?.senderId}, socketSender: ${senderId}, msgSession: ${message?.sessionId}, requestedSession: ${sessionId}`);
                 socket.emit('error', 'Unauthorized to delete this message.');
                 return;
             }
@@ -382,6 +401,10 @@ io.on('connection', (socket) => {
     // Session Termination Broadcast
     socket.on('session_ended', async (data) => {
         io.to(data.sessionId).emit('chat_terminated', { sessionId: data.sessionId, endedBy: data.endedBy });
+    });
+    // Clear Chat Broadcast
+    socket.on('clear_chat', (data) => {
+        io.to(data.sessionId).emit('chat_cleared');
     });
     socket.on('disconnect', async () => {
         console.log(`User disconnected: ${socket.id}`);
@@ -463,17 +486,10 @@ const schedulerInterval = setInterval(async () => {
         const secret = process.env.INTERNAL_API_SECRET || "";
         if (!secret)
             return;
-        // 2. Trigger automated sync and cleanup cron endpoints
+        // 2. Trigger consolidated background cron job
         const headers = { "Content-Type": "application/json", "x-internal-secret": secret };
-        await Promise.all([
-            fetch(`${apiUrl}/api/scheduled-calls/sync`, { method: "POST", headers }).catch(err => console.error("Scheduler call sync failed:", err)),
-            fetch(`${apiUrl}/api/cron/approve-reviews`, { method: "POST", headers }).catch(err => console.error("Scheduler approve reviews failed:", err)),
-            fetch(`${apiUrl}/api/cron/sweep-chats`, { method: "POST", headers }).catch(err => console.error("Scheduler sweep chats failed:", err)),
-            fetch(`${apiUrl}/api/cron/billing`, { method: "POST", headers }).catch(err => console.error("Scheduler billing failed:", err)),
-            fetch(`${apiUrl}/api/cron/subscriptions-renew`, { method: "GET", headers: { authorization: `Bearer ${process.env.CRON_SECRET || secret}` } }).catch(err => console.error("Scheduler subscriptions renew failed:", err)),
-            fetch(`${apiUrl}/api/cron/purge-expired-chats`, { method: "GET", headers: { authorization: `Bearer ${process.env.CRON_SECRET || secret}` } }).catch(err => console.error("Scheduler purge expired chats failed:", err)),
-            fetch(`${apiUrl}/api/cron/scheduled-messages`, { method: "GET", headers: { authorization: `Bearer ${process.env.CRON_SECRET || secret}` } }).catch(err => console.error("Scheduler scheduled messages failed:", err)),
-        ]);
+        await fetch(`${apiUrl}/api/cron/run-all`, { method: "POST", headers })
+            .catch(err => console.error("Scheduler run-all failed:", err));
         // 3. Deactivate expired subscriptions
         const now = new Date();
         await prisma.subscription.updateMany({
@@ -521,54 +537,10 @@ const schedulerInterval = setInterval(async () => {
         console.error("Error in background interval scheduler:", err);
     }
 }, 5 * 60 * 1000); // Run every 5 minutes
-// Hourly Cron Substitute (Bypasses Vercel free-tier cron limits)
-// Pings the web API to process automated payments and refunds every hour
-const hourlySyncInterval = setInterval(async () => {
-    try {
-        const webAppUrl = Array.isArray(frontendOrigin)
-            ? frontendOrigin.find(url => url.includes('helpsathi.com')) || frontendOrigin[0]
-            : frontendOrigin;
-        if (webAppUrl && process.env.INTERNAL_API_SECRET) {
-            console.log(`[Hourly Cron] Triggering payment/refund sync at ${webAppUrl}...`);
-            await fetch(`${webAppUrl}/api/scheduled-calls/sync`, {
-                method: 'POST',
-                headers: {
-                    'x-internal-secret': process.env.INTERNAL_API_SECRET
-                }
-            });
-        }
-    }
-    catch (err) {
-        console.error("Error triggering hourly sync:", err);
-    }
-}, 60 * 60 * 1000); // Run every 60 minutes
-// Daily Cron Substitute
-// Pings the web API to process subscription cleanups once a day
-const dailyCleanupInterval = setInterval(async () => {
-    try {
-        const webAppUrl = Array.isArray(frontendOrigin)
-            ? frontendOrigin.find(url => url.includes('helpsathi.com')) || frontendOrigin[0]
-            : frontendOrigin;
-        if (webAppUrl && process.env.INTERNAL_API_SECRET) {
-            console.log(`[Daily Cron] Triggering subscription cleanup at ${webAppUrl}...`);
-            await fetch(`${webAppUrl}/api/subscriptions/cleanup`, {
-                method: 'POST',
-                headers: {
-                    'x-internal-secret': process.env.INTERNAL_API_SECRET
-                }
-            });
-        }
-    }
-    catch (err) {
-        console.error("Error triggering daily cleanup:", err);
-    }
-}, 24 * 60 * 60 * 1000); // Run every 24 hours
 // L5: Graceful Shutdown handling
 const gracefulShutdown = (signal) => {
     console.log(`${signal} received: closing HTTP and Socket servers gracefully...`);
     clearInterval(schedulerInterval);
-    clearInterval(hourlySyncInterval);
-    clearInterval(dailyCleanupInterval);
     io.emit("server_shutdown", { message: "Server is restarting for updates. Please reconnect shortly." });
     io.close(() => {
         console.log("Socket.io closed.");
