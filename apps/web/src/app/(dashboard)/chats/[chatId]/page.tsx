@@ -777,7 +777,7 @@ export default function ChatRoomPage() {
                   </div>
                   {/* Edit / Delete Buttons */}
                   {isMine && !msg.isDeleted && (
-                    <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity absolute right-full mr-2 top-1/2 -translate-y-1/2">
+                    <div className="flex flex-col gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity absolute right-full mr-2 top-1/2 -translate-y-1/2">
                       {!msg.content.startsWith("[IMAGE:") && !msg.content.startsWith("[PDF:") && (
                         <button 
                           onClick={() => {
