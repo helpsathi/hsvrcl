@@ -154,7 +154,6 @@ export default function ChatRoomPage() {
 
         const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4000";
         socketRef.current = io(socketUrl, {
-          transports: ["websocket", "polling"],
           auth: { token: tokenData.token },
           reconnectionAttempts: 10,
           reconnectionDelay: 1500,
