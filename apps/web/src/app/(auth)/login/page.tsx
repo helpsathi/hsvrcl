@@ -65,6 +65,38 @@ function LoginContent() {
   const { user, loading: authLoading, login } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [testLoginEnabled, setTestLoginEnabled] = useState(false);
+  const [testEmail, setTestEmail] = useState("");
+  const [testPassword, setTestPassword] = useState("");
+
+  useEffect(() => {
+    fetch("/api/auth/test-login").then(res => res.json()).then(data => {
+      if (data.enabled) setTestLoginEnabled(true);
+    }).catch(() => {});
+  }, []);
+
+  const handleTestLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/auth/test-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: testEmail, password: testPassword })
+      });
+      if (res.ok) {
+        window.location.href = "/dashboard";
+      } else {
+        const data = await res.json();
+        setError(data.error || "Login failed");
+        setLoading(false);
+      }
+    } catch (err: any) {
+      setError("Network error");
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     const errorParam = searchParams?.get("error");
@@ -172,6 +204,37 @@ function LoginContent() {
             <span>Fast, 1-click Google Sign-in</span>
           </div>
         </div>
+
+        {testLoginEnabled && (
+          <div className="w-full mt-6 pt-6 border-t border-slate-100 dark:border-slate-800/80">
+            <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 mb-3 uppercase tracking-widest text-center">Test Access</p>
+            <form onSubmit={handleTestLogin} className="space-y-3">
+              <input 
+                type="email" 
+                placeholder="Email" 
+                value={testEmail}
+                onChange={(e) => setTestEmail(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-sm font-medium text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all"
+                required
+              />
+              <input 
+                type="password" 
+                placeholder="Password"
+                value={testPassword}
+                onChange={(e) => setTestPassword(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-sm font-medium text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all"
+                required
+              />
+              <button 
+                type="submit" 
+                disabled={loading || !testEmail || !testPassword}
+                className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 text-white rounded-xl text-sm font-bold shadow-md shadow-slate-200 dark:shadow-none transition-all disabled:opacity-50 disabled:scale-100 active:scale-[0.98]"
+              >
+                Login as Test User
+              </button>
+            </form>
+          </div>
+        )}
 
         {/* Footer Links */}
         <div className="mt-10 pt-6 border-t border-slate-100 dark:border-slate-800/80 w-full">

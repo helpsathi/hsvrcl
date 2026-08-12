@@ -53,6 +53,7 @@ const STRUCTURED_KEYS = {
   // System Toggles
   NOTIFICATIONS_ENABLED: "notifications_enabled",
   COMMUNITY_ENABLED: "community_enabled",
+  TEST_LOGIN_ENABLED: "TEST_LOGIN_ENABLED",
   
   // Support
   CONTACT_FORM_URL: "contact_form_url",
@@ -646,6 +647,34 @@ export default function AdminConfigPage() {
                   className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors duration-200 ease-in-out cursor-pointer ${
                     getValue(STRUCTURED_KEYS.NOTIFICATIONS_ENABLED, "true") === "true"
                       ? "bg-emerald-500 justify-end"
+                      : "bg-slate-300 dark:bg-slate-700 justify-start"
+                  }`}
+                >
+                  <div className="bg-white w-4 h-4 rounded-full shadow-md transform transition-transform" />
+                </button>
+              </div>
+
+              {/* Test Login Switch */}
+              <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-700/60">
+                <div className="space-y-0.5">
+                  <div className="text-xs font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                    <ShieldCheck weight="bold" className="text-rose-600 dark:text-rose-400" />
+                    <span>Enable Test Login (Razorpay)</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Shows an email/password form on the login page for Razorpay verification. Uses test@helpsathi.com / test@123.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const current = getValue(STRUCTURED_KEYS.TEST_LOGIN_ENABLED, "false");
+                    handleValueChange(STRUCTURED_KEYS.TEST_LOGIN_ENABLED, current === "true" ? "false" : "true");
+                  }}
+                  className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors duration-200 ease-in-out cursor-pointer ${
+                    getValue(STRUCTURED_KEYS.TEST_LOGIN_ENABLED, "false") === "true"
+                      ? "bg-rose-500 justify-end"
                       : "bg-slate-300 dark:bg-slate-700 justify-start"
                   }`}
                 >
