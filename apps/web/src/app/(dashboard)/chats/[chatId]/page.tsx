@@ -313,6 +313,7 @@ export default function ChatRoomPage() {
         sessionId: chatId,
         messageId: editingMessageId,
         content: text,
+        senderId: user.id,
       });
       setEditingMessageId(null);
       setNewMessage("");

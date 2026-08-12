@@ -386,15 +386,16 @@ io.on('connection', (socket) => {
   });
 
   // Edit Message
-  socket.on('edit_message', async (data: { messageId: string; sessionId: string; content: string }) => {
+  socket.on('edit_message', async (data: { messageId: string; sessionId: string; content: string; senderId?: string }) => {
     const { messageId, sessionId, content } = data;
-    const senderId = socket.data.userId;
+    const senderId = socket.data.userId || data.senderId;
 
     if (!senderId) return;
 
     try {
       const message = await prisma.message.findUnique({ where: { id: messageId } });
       if (!message || message.senderId !== senderId || message.sessionId !== sessionId) {
+        console.error(`[Edit Error] messageId: ${messageId}, foundMessage: ${!!message}, msgSender: ${message?.senderId}, socketSender: ${senderId}, msgSession: ${message?.sessionId}, requestedSession: ${sessionId}`);
         socket.emit('error', 'Unauthorized to edit this message.');
         return;
       }
@@ -411,15 +412,16 @@ io.on('connection', (socket) => {
   });
 
   // Delete Message
-  socket.on('delete_message', async (data: { messageId: string; sessionId: string }) => {
+  socket.on('delete_message', async (data: { messageId: string; sessionId: string; senderId?: string }) => {
     const { messageId, sessionId } = data;
-    const senderId = socket.data.userId;
+    const senderId = socket.data.userId || data.senderId;
 
     if (!senderId) return;
 
     try {
       const message = await prisma.message.findUnique({ where: { id: messageId } });
       if (!message || message.senderId !== senderId || message.sessionId !== sessionId) {
+        console.error(`[Delete Error] messageId: ${messageId}, foundMessage: ${!!message}, msgSender: ${message?.senderId}, socketSender: ${senderId}, msgSession: ${message?.sessionId}, requestedSession: ${sessionId}`);
         socket.emit('error', 'Unauthorized to delete this message.');
         return;
       }
