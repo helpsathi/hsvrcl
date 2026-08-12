@@ -288,7 +288,7 @@ export default function ChatRoomPage() {
 
   const handleTyping = (text: string) => {
     setNewMessage(text);
-    if (chat?.status !== "ACTIVE" || !socketRef.current) return;
+    if (chat?.status !== "ACTIVE" || !socketRef.current || !user) return;
     socketRef.current.emit("typing", { sessionId: chatId, senderId: user.id });
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     typingTimeoutRef.current = setTimeout(() => {
