@@ -110,6 +110,8 @@ export default function ChatRoomPage() {
 
   const [isConnected, setIsConnected] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [isOtherUserTyping, setIsOtherUserTyping] = useState(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -178,6 +180,14 @@ export default function ChatRoomPage() {
         socketRef.current.on("connect_error", (err: any) => {
           console.error("Socket connection error:", err.message || err);
           setIsConnected(false);
+        });
+
+        socketRef.current.on("user_typing", ({ senderId }: { senderId: string }) => {
+          if (senderId !== user.id) setIsOtherUserTyping(true);
+        });
+
+        socketRef.current.on("user_stopped_typing", ({ senderId }: { senderId: string }) => {
+          if (senderId !== user.id) setIsOtherUserTyping(false);
         });
 
         socketRef.current.on("receive_message", (message: Message) => {
@@ -276,6 +286,16 @@ export default function ChatRoomPage() {
     return () => clearTimeout(t);
   }, [pendingMsg, user, isConnected, chatId, router]);
 
+  const handleTyping = (text: string) => {
+    setNewMessage(text);
+    if (chat?.status !== "ACTIVE" || !socketRef.current) return;
+    socketRef.current.emit("typing", { sessionId: chatId, senderId: user.id });
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = setTimeout(() => {
+      socketRef.current?.emit("stop_typing", { sessionId: chatId, senderId: user.id });
+    }, 2000);
+  };
+
   const handleSendMessage = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const text = newMessage.trim();
@@ -306,6 +326,9 @@ export default function ChatRoomPage() {
       senderId: user.id,
       content: text,
     });
+
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    socketRef.current.emit("stop_typing", { sessionId: chatId, senderId: user.id });
 
     setNewMessage("");
   };
@@ -803,6 +826,24 @@ export default function ChatRoomPage() {
               </div>
             );
           })}
+          {isOtherUserTyping && (
+            <div className="flex w-full justify-start mt-1.5 animate-in slide-in-from-bottom-2 fade-in duration-300">
+              <div className="flex items-end gap-2">
+                <div className="w-6 shrink-0 flex flex-col justify-end h-full">
+                  <img 
+                    src={otherUser.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(otherUser.name)}&background=random`} 
+                    alt="" 
+                    className="w-6 h-6 rounded-full object-cover mb-1 opacity-80" 
+                  />
+                </div>
+                <div className="px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-2xl rounded-bl-sm shadow-sm flex items-center gap-1.5 h-10">
+                  <span className="w-1.5 h-1.5 bg-slate-400 dark:bg-slate-500 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                  <span className="w-1.5 h-1.5 bg-slate-400 dark:bg-slate-500 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                  <span className="w-1.5 h-1.5 bg-slate-400 dark:bg-slate-500 rounded-full animate-bounce"></span>
+                </div>
+              </div>
+            </div>
+          )}
           <div ref={messagesEndRef} className="h-28" />
         </div>
       </div>
@@ -853,7 +894,7 @@ export default function ChatRoomPage() {
                 <div className="flex items-end">
                   <textarea
                     value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
+                    onChange={(e) => handleTyping(e.target.value)}
                     placeholder="Type a message..."
                     rows={1}
                     onKeyDown={(e) => {

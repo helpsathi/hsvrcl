@@ -229,6 +229,17 @@ io.on('connection', (socket) => {
     console.log(`Socket ${socket.id} left session ${sessionId}`);
   });
 
+  // Typing Indicators (Safe pass-through)
+  socket.on('typing', (data: { sessionId: string; senderId: string }) => {
+    const senderId = socket.data.userId || data.senderId;
+    socket.to(data.sessionId).emit('user_typing', { senderId });
+  });
+
+  socket.on('stop_typing', (data: { sessionId: string; senderId: string }) => {
+    const senderId = socket.data.userId || data.senderId;
+    socket.to(data.sessionId).emit('user_stopped_typing', { senderId });
+  });
+
   // Send Message & Start Timer on First Mentor Message
   socket.on('send_message', async (data: { sessionId: string; senderId: string; content: string }) => {
     const { sessionId, content } = data;
