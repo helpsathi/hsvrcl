@@ -67,12 +67,6 @@ enum ScheduledChatStatus {
   DISPUTED
 }
 
-enum ProposalStatus {
-  OPEN
-  CLOSED
-  CANCELLED
-}
-
 enum ScheduledMessageStatus {
   PENDING
   SENT
@@ -123,7 +117,7 @@ model User {
   communityComments CommunityComment[]
   groupMeetings     GroupMeeting[]
   groupMeetingAttendances GroupMeetingAttendee[] @relation("GroupMeetingAttendees")
-  proposalAcceptances SessionProposalAcceptance[]
+
   auditLogs         AuditLog[]     @relation("UserAuditLogs")
   payments          Payment[]
 
@@ -161,8 +155,7 @@ model MentorProfile {
   holidayUntil   DateTime?
   rejectionReason String?
   bookingNoticeHours Int      @default(2)
-  googleCalendarRefreshToken String?   // Mentor's own Google OAuth token for Meet generation
-  googleCalendarConnected    Boolean   @default(false)
+  personalMeetingLink        String?   @db.VarChar(500)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
@@ -170,7 +163,7 @@ model MentorProfile {
   reviews       Review[]       @relation("MentorReviews")
   announcements Announcement[]
   availabilitySlots MentorAvailability[]
-  sessionProposals SessionProposal[]
+
   withdrawalRequests WithdrawalRequest[] @relation("MentorWithdrawalRequests")
 
   @@index([status, avgRating])
@@ -330,6 +323,7 @@ model Message {
   sender      User        @relation(fields: [senderId], references: [id], onDelete: Restrict)
   content     String
   attachments String[]    @default([])
+  isRead      Boolean     @default(false)
   isDeleted   Boolean     @default(false)
   editedAt    DateTime?
   createdAt   DateTime    @default(now())
@@ -399,6 +393,8 @@ model Announcement {
   title          String
   content        String
   targetAudience String         @default("SUBSCRIBERS")
+  attachments    String[]       @default([])
+  links          String[]       @default([])
   createdAt      DateTime       @default(now())
 
   @@map("announcements")
@@ -476,40 +472,7 @@ model MentorAvailability {
   @@map("mentor_availability")
 }
 
-model SessionProposal {
-  id              String         @id @default(uuid())
-  mentorProfileId String
-  mentor          MentorProfile  @relation(fields: [mentorProfileId], references: [id], onDelete: Cascade)
-  title           String
-  description     String?
-  proposedAt      DateTime
-  durationMinutes Int            @default(30)
-  targetType      String         @default("ALL")  // "ALL" | "SELECTED"
-  targetStudentIds String[]      // Empty = all subscribers
-  expiresAt       DateTime
-  status          ProposalStatus @default(OPEN)
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
 
-  acceptances SessionProposalAcceptance[]
-
-  @@index([mentorProfileId, status])
-  @@map("session_proposals")
-}
-
-model SessionProposalAcceptance {
-  id              String          @id @default(uuid())
-  proposalId      String
-  proposal        SessionProposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
-  studentId       String
-  student         User            @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  scheduledChatId String?         // Set once a ScheduledChat is created from this acceptance
-  isFree          Boolean         @default(true)
-  acceptedAt      DateTime        @default(now())
-
-  @@unique([proposalId, studentId])
-  @@map("session_proposal_acceptances")
-}
 
 model AuditLog {
   id        String   @id @default(uuid())

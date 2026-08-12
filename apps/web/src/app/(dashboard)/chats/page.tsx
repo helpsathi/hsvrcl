@@ -20,6 +20,7 @@ interface ChatSession {
   updatedAt: string;
   status: string;
   hasUnread?: boolean;
+  unreadCount?: number;
   durationMinutes?: number;
   totalCharge?: number;
 }
@@ -184,7 +185,7 @@ export default function ChatsPage() {
                       </h3>
                       {chat.hasUnread && (
                         <span className="px-2 py-0.5 text-[10px] font-black uppercase tracking-wider bg-blue-600 text-white rounded-full">
-                          New
+                          {chat.unreadCount && chat.unreadCount > 1 ? `${chat.unreadCount} New` : "New"}
                         </span>
                       )}
                       {chat.status === "ACTIVE" ? (

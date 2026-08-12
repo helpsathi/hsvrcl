@@ -38,7 +38,8 @@ export default function MentorGroupMeetingsPage() {
     description: "",
     date: "",
     time: "",
-    durationMinutes: 60
+    durationMinutes: 60,
+    meetLink: ""
   });
 
   useEffect(() => {
@@ -48,7 +49,20 @@ export default function MentorGroupMeetingsPage() {
       return;
     }
     fetchMeetings();
+    fetchProfile();
   }, [user, activeTab, page]);
+
+  const fetchProfile = async () => {
+    try {
+      const res = await fetch(`/api/mentors/profile`);
+      const data = await res.json();
+      if (res.ok && data.profile?.personalMeetingLink) {
+        setFormData(prev => ({ ...prev, meetLink: data.profile.personalMeetingLink }));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const fetchMeetings = async () => {
     try {
@@ -103,7 +117,8 @@ export default function MentorGroupMeetingsPage() {
           title: formData.title,
           description: formData.description,
           scheduledAt: scheduledAt.toISOString(),
-          durationMinutes: formData.durationMinutes
+          durationMinutes: formData.durationMinutes,
+          meetLink: formData.meetLink
         })
       });
 
@@ -111,7 +126,9 @@ export default function MentorGroupMeetingsPage() {
       if (!res.ok) throw new Error(data.error || "Failed to create group meeting");
 
       setSuccess("Group meeting created! Subscribers have been notified.");
-      setFormData({ title: "", description: "", date: "", time: "", durationMinutes: 60 });
+      
+      // Preserve the meetLink for the next meeting they create
+      setFormData({ title: "", description: "", date: "", time: "", durationMinutes: 60, meetLink: formData.meetLink });
       fetchMeetings();
     } catch (err: any) {
       setError(err.message);
@@ -184,6 +201,19 @@ export default function MentorGroupMeetingsPage() {
                 placeholder="What will you cover?"
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all font-medium min-h-[100px] resize-y"
               />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Meeting Link</label>
+              <input 
+                type="url" 
+                required
+                value={formData.meetLink}
+                onChange={e => setFormData({...formData, meetLink: e.target.value})}
+                placeholder="https://meet.google.com/abc-defg-hij"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all font-medium"
+              />
+              <p className="text-[10px] text-slate-400 mt-1">Paste your Zoom, Google Meet, or Teams link here.</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">

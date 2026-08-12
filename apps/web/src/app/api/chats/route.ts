@@ -25,6 +25,13 @@ export async function GET(req: Request) {
             take: 1,
             select: { id: true, content: true, senderId: true, createdAt: true },
           },
+          _count: {
+            select: {
+              messages: {
+                where: { isRead: false, senderId: { not: userId } },
+              },
+            },
+          },
         },
         orderBy: { updatedAt: "desc" },
       });
@@ -39,6 +46,13 @@ export async function GET(req: Request) {
             orderBy: { createdAt: "desc" },
             take: 1,
             select: { id: true, content: true, senderId: true, createdAt: true },
+          },
+          _count: {
+            select: {
+              messages: {
+                where: { isRead: false, senderId: { not: userId } },
+              },
+            },
           },
         },
         orderBy: { updatedAt: "desc" },
@@ -71,6 +85,7 @@ export async function GET(req: Request) {
         lastMessage,
         lastMessageSenderId: latestMsg?.senderId,
         hasUnread: Boolean(latestMsg && latestMsg.senderId !== userId && chat.status === "ACTIVE"),
+        unreadCount: chat._count?.messages || 0,
         updatedAt: chat.updatedAt,
         status: chat.status,
         durationMinutes: chat.durationMinutes,

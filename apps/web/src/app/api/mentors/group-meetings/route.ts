@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { createGoogleMeetEvent } from "@/lib/googleCalendar";
 
 export async function POST(req: Request) {
   try {
@@ -10,10 +9,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { title, description, scheduledAt, durationMinutes = 60 } = await req.json();
+    const { title, description, scheduledAt, durationMinutes = 60, meetLink } = await req.json();
 
-    if (!title || !scheduledAt) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    if (!title || !scheduledAt || !meetLink) {
+      return NextResponse.json({ error: "Missing required fields (title, date, and meeting link)" }, { status: 400 });
+    }
+
+    if (!/^https?:\/\//i.test(meetLink)) {
+      return NextResponse.json({ error: "Invalid meeting link. Must start with http:// or https://" }, { status: 400 });
     }
 
     const scheduledDate = new Date(scheduledAt);
@@ -57,17 +60,6 @@ export async function POST(req: Request) {
       }
     }) : [];
 
-    const attendeeEmails = [mentor?.email, ...activeSubscriptions.map(s => s.student.email)].filter(Boolean) as string[];
-
-    // Auto-generate Google Meet link with all active subscribers on the guest list
-    const { meetLink, eventId } = await createGoogleMeetEvent({
-      title: `Group Session: ${title} (by ${mentor?.name || "Mentor"})`,
-      description: description || "Exclusive group session for subscribed students.",
-      startTime: scheduledDate,
-      durationMinutes: Number(durationMinutes),
-      attendeeEmails,
-    });
-
     // Save the meeting
     const groupMeeting = await prisma.groupMeeting.create({
       data: {
@@ -75,7 +67,6 @@ export async function POST(req: Request) {
         title,
         description,
         meetLink,
-        eventId: eventId || null,
         scheduledAt: scheduledDate,
         durationMinutes: Number(durationMinutes) || 60,
       } as any

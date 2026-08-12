@@ -124,20 +124,10 @@ export async function POST(req: Request) {
       }
     }
 
-    // 3. Auto-close expired Session Proposals whose proposedAt time has passed
-    const expiredProposals = await prisma.sessionProposal.updateMany({
-      where: {
-        status: "OPEN",
-        proposedAt: { lt: now }
-      },
-      data: { status: "CLOSED" }
-    });
-
     return NextResponse.json({ 
       success: true, 
       processedMissed: updatedMissed.length,
-      processedCompleted: updatedCompleted.length,
-      closedProposals: expiredProposals.count
+      processedCompleted: updatedCompleted.length
     });
   } catch (error: any) {
     console.error("Sync Cron Error:", error);

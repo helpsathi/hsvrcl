@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { createGoogleMeetEvent } from "@/lib/googleCalendar";
 
 export async function POST(req: Request, { params }: { params: Promise<{ chatId: string }> }) {
   try {
@@ -30,32 +29,22 @@ export async function POST(req: Request, { params }: { params: Promise<{ chatId:
       return NextResponse.json({ error: "Cannot start a video call on an inactive chat" }, { status: 400 });
     }
 
-    const mentorUser = await prisma.user.findUnique({
-      where: { id: chatSession.mentorId },
-      select: { email: true, name: true }
-    });
-    const studentUser = await prisma.user.findUnique({
-      where: { id: chatSession.studentId },
-      select: { email: true, name: true }
+    const mentorProfile = await prisma.mentorProfile.findUnique({
+      where: { userId: chatSession.mentorId },
+      select: { personalMeetingLink: true }
     });
 
     // Generate real Google Meet video session
     try {
-      const { meetLink, eventId } = await createGoogleMeetEvent({
-        title: `HelpSathi Live Call: ${studentUser?.name || "Student"} & ${mentorUser?.name || "Mentor"}`,
-        description: "Instant live mentorship consultation initiated from active chat session.",
-        startTime: new Date(),
-        durationMinutes: 45,
-        attendeeEmails: [mentorUser?.email, studentUser?.email],
-      });
+      const meetLink = mentorProfile?.personalMeetingLink;
 
       if (!meetLink) {
-        return NextResponse.json({ error: "Could not generate Google Meet link. Please try again." }, { status: 503 });
+        return NextResponse.json({ error: "Mentor has not provided a personal meeting link." }, { status: 400 });
       }
 
-      return NextResponse.json({ success: true, meetLink, eventId });
+      return NextResponse.json({ success: true, meetLink, eventId: null });
     } catch (meetError: any) {
-      return NextResponse.json({ error: meetError.message || "Google Meet unavailable" }, { status: 503 });
+      return NextResponse.json({ error: meetError.message || "Video unavailable" }, { status: 503 });
     }
   } catch (error: any) {
     console.error("Instant Video Call Error:", error);

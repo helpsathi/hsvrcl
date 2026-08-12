@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { createGoogleMeetEvent, deleteGoogleMeetEvent } from "@/lib/googleCalendar";
 import { getPlatformConfigNumber, CONFIG_KEYS } from "@/lib/config";
 import { dispatchNotification } from "@/lib/notifications";
 
@@ -58,10 +57,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
     // If it's already cancelled or rejected, don't refund again
     if ((status === "REJECTED" || status === "CANCELLED") && (call.status === "PENDING" || call.status === "CONFIRMED")) {
-      // Cancel Google Calendar event if it exists
-      if (call.eventId) {
-        await deleteGoogleMeetEvent(call.eventId);
-      }
+      // We no longer use Google Calendar integration, so we don't delete events here.
 
       const updated = await prisma.$transaction(async (tx) => {
         if (call.student.wallet) {
@@ -185,18 +181,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     }
 
     const updatePayload: any = { status };
-    if (status === "CONFIRMED" && (!call.meetLink || !call.meetLink.startsWith("http"))) {
-      // Generate authentic Google Meet link upon confirmation if not yet present
-      const { meetLink, eventId } = await createGoogleMeetEvent({
-        title: `HelpSathi Confirmed Call: ${call.student.name} & ${call.mentor.name}`,
-        description: `Confirmed Mentorship session on HelpSathi platform. Notes: ${call.notes || "None"}`,
-        startTime: new Date(call.scheduledAt),
-        durationMinutes: call.durationMinutes,
-        attendeeEmails: [call.student.email, call.mentor.email],
-      });
-      updatePayload.meetLink = meetLink;
-      if (eventId) updatePayload.eventId = eventId;
-    }
+    // We no longer automatically generate authentic Google Meet links upon confirmation.
+    // The meetLink is generated from mentor's personalMeetingLink at creation, or updated manually.
 
     const updated = await prisma.scheduledChat.update({
       where: { id },

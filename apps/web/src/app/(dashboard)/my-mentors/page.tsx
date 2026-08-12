@@ -34,30 +34,13 @@ interface SubscribedMentor {
   };
 }
 
-interface SessionProposal {
-  id: string;
-  title: string;
-  description: string | null;
-  proposedAt: string;
-  durationMinutes: number;
-  targetType: string;
-  expiresAt: string;
-  status: string;
-  mentor: {
-    id: string;
-    user: { id: string; name: string; avatar: string | null };
-  };
-  acceptances: { id: string; acceptedAt: string; scheduledChatId: string | null }[];
-}
 
 export default function MyMentorsPage() {
   const { user } = useAuth();
   const router = useRouter();
 
   const [mentors, setMentors] = useState<SubscribedMentor[]>([]);
-  const [proposals, setProposals] = useState<SessionProposal[]>([]);
   const [loading, setLoading] = useState(true);
-  const [acceptingId, setAcceptingId] = useState<string | null>(null);
   const [initiatingChatMentorId, setInitiatingChatMentorId] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -72,21 +55,14 @@ export default function MyMentorsPage() {
 
   const fetchAll = async () => {
     try {
-      const [mentorRes, proposalRes] = await Promise.all([
-        fetch("/api/mentors/subscribed"),
-        fetch("/api/session-proposals"),
-      ]);
-      const [mentorData, proposalData] = await Promise.all([
-        mentorRes.json(),
-        proposalRes.json(),
-      ]);
+      const mentorRes = await fetch("/api/mentors/subscribed");
       if (mentorRes.ok) {
+        const mentorData = await mentorRes.json();
         setMentors(mentorData.mentors || []);
         if (typeof mentorData.walletBalance === "number") {
           setWalletBalance(mentorData.walletBalance);
         }
       }
-      if (proposalRes.ok) setProposals(proposalData.proposals || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -143,26 +119,6 @@ export default function MyMentorsPage() {
     }
   };
 
-  const handleAcceptProposal = async (proposalId: string) => {
-    setAcceptingId(proposalId);
-    setSuccessMsg(null);
-    setErrorMsg(null);
-    try {
-      const res = await fetch(`/api/session-proposals/${proposalId}/accept`, { method: "POST" });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to accept proposal");
-      setSuccessMsg(`Session booked! ${data.isFree ? "It's FREE as part of your subscription 🎉" : `₹${data.scheduledCall?.estimatedCost} deducted.`} Google Meet invite sent to your email.`);
-      // Refresh proposals
-      const proposalRes = await fetch("/api/session-proposals");
-      const proposalData = await proposalRes.json();
-      if (proposalRes.ok) setProposals(proposalData.proposals || []);
-    } catch (err: any) {
-      setErrorMsg(err.message);
-    } finally {
-      setAcceptingId(null);
-    }
-  };
-
   const handleStartChat = async (mentorProfileId: string, name?: string, avatar?: string) => {
     setInitiatingChatMentorId(mentorProfileId);
     setErrorMsg(null);
@@ -190,8 +146,6 @@ export default function MyMentorsPage() {
     }
   };
 
-  const openProposals = proposals.filter(p => p.acceptances.length === 0 && p.status === "OPEN");
-  const acceptedProposals = proposals.filter(p => p.acceptances.length > 0);
 
   if (loading) {
     const { MyMentorsSkeleton } = require("@/components/ui/Skeleton");
@@ -206,7 +160,7 @@ export default function MyMentorsPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">My Mentors</h1>
-            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mt-1">Your subscribed mentors, session proposals, and booking portal</p>
+            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mt-1">Your subscribed mentors and booking portal</p>
           </div>
           <Link
             href="/dashboard"
@@ -228,86 +182,6 @@ export default function MyMentorsPage() {
             <WarningCircle weight="fill" className="text-2xl shrink-0 mt-0.5" />
             <p className="font-semibold text-sm">{errorMsg}</p>
           </div>
-        )}
-
-        {/* === OPEN SESSION PROPOSALS === */}
-        {openProposals.length > 0 && (
-          <section>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 rounded-xl bg-amber-500/15 flex items-center justify-center">
-                <Sparkle weight="fill" className="text-amber-500 text-lg animate-pulse" />
-              </div>
-              <h2 className="text-lg font-black text-slate-900 dark:text-white">Session Proposals from Your Mentors</h2>
-              <span className="px-2.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-xs font-bold">{openProposals.length} pending</span>
-            </div>
-            <div className="grid gap-4">
-              {openProposals.map((proposal) => {
-                const proposedDate = new Date(proposal.proposedAt);
-                const expiresDate = new Date(proposal.expiresAt);
-                const isExpiringSoon = (expiresDate.getTime() - Date.now()) < 24 * 60 * 60 * 1000;
-                return (
-                  <div key={proposal.id} className="relative overflow-hidden bg-white dark:bg-slate-900 rounded-3xl border-2 border-amber-200/80 dark:border-amber-700/40 shadow-xl shadow-amber-500/5 p-6">
-                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-400 via-orange-400 to-yellow-400"></div>
-
-                    <div className="flex flex-col md:flex-row md:items-center gap-4">
-                      {/* Mentor avatar */}
-                      <div className="flex items-center gap-3 shrink-0">
-                        <img
-                          src={proposal.mentor.user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(proposal.mentor.user.name)}&background=random`}
-                          referrerPolicy="no-referrer"
-                          onError={(e) => { (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(proposal.mentor.user.name)}&background=random`; }}
-                          className="w-12 h-12 rounded-2xl object-cover border-2 border-amber-100 dark:border-amber-900"
-                          alt={proposal.mentor.user.name}
-                        />
-                        <div>
-                          <p className="text-xs text-slate-500 font-medium">From your mentor</p>
-                          <p className="font-bold text-slate-900 dark:text-white">{proposal.mentor.user.name}</p>
-                        </div>
-                      </div>
-
-                      {/* Proposal details */}
-                      <div className="flex-1 space-y-1">
-                        <h3 className="font-extrabold text-slate-900 dark:text-white text-base">{proposal.title}</h3>
-                        {proposal.description && (
-                          <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2">{proposal.description}</p>
-                        )}
-                        <div className="flex flex-wrap items-center gap-3 pt-1">
-                          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50 px-2.5 py-1 rounded-lg">
-                            <CalendarCheck className="text-sm" />
-                            {proposedDate.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" })} at {proposedDate.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })} IST
-                          </span>
-                          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg">
-                            <Clock className="text-sm" /> {proposal.durationMinutes} min session
-                          </span>
-                          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2.5 py-1 rounded-lg border border-emerald-200/50 dark:border-emerald-800/50">
-                            <Sparkle weight="fill" className="text-sm" /> FREE for subscribers
-                          </span>
-                          {isExpiringSoon && (
-                            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/50 px-2.5 py-1 rounded-lg animate-pulse">
-                              <WarningCircle className="text-sm" /> Expires soon!
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Accept button */}
-                      <button
-                        onClick={() => handleAcceptProposal(proposal.id)}
-                        disabled={acceptingId === proposal.id}
-                        className="shrink-0 flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm text-white bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-emerald-500/25 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 disabled:scale-100"
-                      >
-                        {acceptingId === proposal.id ? (
-                          <><ArrowsClockwise className="animate-spin text-lg" /> Booking...</>
-                        ) : (
-                          <><CheckCircle weight="fill" className="text-lg" /> Accept (Free)</>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
         )}
 
         {/* === YOUR SUBSCRIBED MENTORS === */}
@@ -526,38 +400,7 @@ export default function MyMentorsPage() {
           )}
         </section>
 
-        {/* === ACCEPTED PROPOSALS === */}
-        {acceptedProposals.length > 0 && (
-          <section>
-            <h2 className="text-lg font-black text-slate-900 dark:text-white mb-4 flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-emerald-500/15 flex items-center justify-center">
-                <CalendarCheck weight="fill" className="text-emerald-500 text-lg" />
-              </div>
-              Accepted Sessions
-            </h2>
-            <div className="grid gap-3">
-              {acceptedProposals.map((proposal) => (
-                <div key={proposal.id} className="bg-white dark:bg-slate-900 rounded-2xl border border-emerald-200/60 dark:border-emerald-800/40 shadow-sm p-4 flex flex-col md:flex-row md:items-center gap-3">
-                  <CheckCircle weight="fill" className="text-2xl text-emerald-500 shrink-0" />
-                  <div className="flex-1">
-                    <p className="font-bold text-slate-900 dark:text-white text-sm">{proposal.title}</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                      {new Date(proposal.proposedAt).toLocaleString("en-IN", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Kolkata" })} IST • {proposal.durationMinutes} min • with {proposal.mentor.user.name}
-                    </p>
-                  </div>
-                  {proposal.acceptances[0]?.scheduledChatId && (
-                    <Link
-                      href={`/scheduled-calls`}
-                      className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
-                    >
-                      <VideoCamera className="text-sm" /> View in Schedule
-                    </Link>
-                  )}
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
+
       </div>
 
       <ReviewModal

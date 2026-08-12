@@ -40,8 +40,7 @@ async function main() {
   await prisma.pushSubscription.deleteMany({});
   await prisma.scheduledMessage.deleteMany({});
   await prisma.auditLog.deleteMany({});
-  await prisma.sessionProposalAcceptance.deleteMany({});
-  await prisma.sessionProposal.deleteMany({});
+
   await prisma.mentorAvailability.deleteMany({});
   await prisma.groupMeetingAttendee.deleteMany({});
   await prisma.groupMeeting.deleteMany({});

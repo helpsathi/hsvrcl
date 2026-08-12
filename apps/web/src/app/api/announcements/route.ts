@@ -56,7 +56,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized. Mentor or Admin access required." }, { status: 401 });
     }
 
-    const { title, content, targetAudience } = await req.json();
+    const { title, content, targetAudience, attachments, links } = await req.json();
 
     if (!title?.trim() || !content?.trim()) {
       return NextResponse.json({ error: "Title and content are required." }, { status: 400 });
@@ -77,7 +77,7 @@ export async function POST(req: Request) {
       authorName = mentorProfile.user.name;
     }
 
-    const audience = targetAudience || (session.role === "MENTOR" ? "SUBSCRIBERS" : "ALL");
+    const audience = session.role === "MENTOR" ? "SUBSCRIBERS" : (targetAudience || "ALL");
 
     const announcement = await prisma.announcement.create({
       data: {
@@ -85,6 +85,8 @@ export async function POST(req: Request) {
         title: title.trim(),
         content: content.trim(),
         targetAudience: audience,
+        attachments: attachments || [],
+        links: links || [],
       },
       include: {
         mentor: {

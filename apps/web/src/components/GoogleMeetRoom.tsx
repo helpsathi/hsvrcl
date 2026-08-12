@@ -22,7 +22,7 @@ interface GoogleMeetRoomProps {
   scheduledAt?: string | Date;
   durationMinutes?: number;
   isHost?: boolean;
-  onGenerateLink?: () => Promise<void> | void;
+  onUpdateLink?: (link: string) => Promise<void> | void;
   isGenerating?: boolean;
   participantName?: string;
   participantRole?: string;
@@ -35,7 +35,7 @@ export function GoogleMeetRoom({
   scheduledAt,
   durationMinutes = 60,
   isHost = false,
-  onGenerateLink,
+  onUpdateLink,
   isGenerating = false,
   participantName,
   participantRole,
@@ -53,12 +53,21 @@ export function GoogleMeetRoom({
     setTimeout(() => setCopied(false), 2500);
   };
 
-  const handleSync = async () => {
-    if (!onGenerateLink) return;
+  const handleSync = async (e?: React.FormEvent<HTMLFormElement>) => {
+    if (!onUpdateLink) return;
+    let newLink = meetLink;
+    if (e) {
+      e.preventDefault();
+      const formData = new FormData(e.currentTarget);
+      newLink = formData.get("linkInput") as string;
+    }
+    
+    if (!newLink) return;
+
     setSyncing(true);
     setSyncError(null);
     try {
-      await onGenerateLink();
+      await onUpdateLink(newLink);
     } catch (err: any) {
       setSyncError(err.message || "Failed to generate meeting link");
     } finally {
@@ -132,14 +141,14 @@ export function GoogleMeetRoom({
         {isValidMeetLink ? (
           <div className="w-full space-y-4 max-w-lg">
             <a
-              href={meetLink}
+              href={meetLink || undefined}
               target="_blank"
               rel="noopener noreferrer"
               className="group relative flex items-center justify-center gap-3 w-full py-4 px-8 rounded-2xl font-bold text-base md:text-lg text-white shadow-xl overflow-hidden transition-all duration-300 bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 hover:from-emerald-500 hover:via-teal-500 hover:to-indigo-500 hover:scale-[1.02] active:scale-[0.98] border border-emerald-400/20"
             >
               <div className="absolute inset-0 w-1/2 h-full bg-white/10 skew-x-12 -translate-x-full group-hover:translate-x-[300%] transition-transform duration-1000"></div>
               <VideoCamera weight="fill" className="text-2xl text-emerald-200 group-hover:rotate-12 transition-transform" />
-              <span>Launch Google Meet</span>
+              <span>Join Meeting Room</span>
               <ArrowSquareOut weight="bold" className="text-xl opacity-75 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
             </a>
 
@@ -164,39 +173,22 @@ export function GoogleMeetRoom({
                 )}
               </button>
             </div>
-
-            {/* Sync / Regeneration Trigger for both Mentors and Students */}
-            {onGenerateLink && (
-              <div className="pt-4">
-                <button
-                  onClick={handleSync}
-                  disabled={syncing || isGenerating}
-                  className="inline-flex items-center gap-2 text-xs font-medium text-indigo-400 hover:text-indigo-300 transition-colors disabled:opacity-50 group"
-                >
-                  <ArrowsClockwise
-                    weight="bold"
-                    className={`text-sm transition-transform ${syncing || isGenerating ? "animate-spin" : "group-hover:rotate-45"}`}
-                  />
-                  <span>
-                    {syncing || isGenerating
-                      ? "Synchronizing with Google Calendar..."
-                      : "Regenerate Google Meet Link & Sync Calendar Invite"}
-                  </span>
-                </button>
-                <p className="text-[11px] text-slate-500 mt-1">
-                  Both mentor and student can re-sync calendar invites anytime.
-                </p>
-              </div>
-            )}
           </div>
         ) : (
-          /* When Meet Link hasn't been created yet or is a legacy Jitsi string */
+          /* When Meet Link hasn't been created yet */
           <div className="w-full max-w-md p-6 rounded-2xl bg-slate-900/90 border border-amber-500/30 text-center shadow-lg backdrop-blur-xl">
             <CalendarPlus weight="duotone" className="text-5xl text-indigo-400 mx-auto mb-4 animate-bounce" />
-            <h3 className="text-lg font-bold text-white mb-2">Google Meet Setup Ready</h3>
-            <p className="text-xs md:text-sm text-slate-300 mb-6 leading-relaxed">
-              Click below to immediately generate a Google Meet video link and automatically attach formal invitations to both the mentor&apos;s and student&apos;s Google Calendars.
-            </p>
+            <h3 className="text-lg font-bold text-white mb-2">Meeting Setup Ready</h3>
+            
+            {isHost ? (
+              <p className="text-xs md:text-sm text-slate-300 mb-6 leading-relaxed">
+                Please provide the meeting link (Zoom, Google Meet, Teams) for this session below.
+              </p>
+            ) : (
+              <p className="text-xs md:text-sm text-slate-300 mb-6 leading-relaxed">
+                Waiting for the mentor to provide the meeting room link. Please refresh if you don't see it yet.
+              </p>
+            )}
 
             {syncError && (
               <div className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs text-left flex items-start gap-2">
@@ -207,38 +199,39 @@ export function GoogleMeetRoom({
                 </div>
               </div>
             )}
-
-            {onGenerateLink ? (
-              <button
-                onClick={handleSync}
-                disabled={syncing || isGenerating}
-                className="relative w-full py-3.5 px-6 rounded-xl font-bold text-sm md:text-base text-white shadow-lg bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2.5 border border-indigo-400/30"
-              >
-                {syncing || isGenerating ? (
-                  <>
-                    <ArrowsClockwise weight="bold" className="text-lg animate-spin text-indigo-200" />
-                    <span>Generating Google Meet...</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkle weight="fill" className="text-lg text-amber-300 animate-pulse" />
-                    <span>Generate Meet Link & Calendar Invite</span>
-                  </>
-                )}
-              </button>
-            ) : (
-              <p className="text-xs font-semibold text-rose-400">
-                Please wait for the appointment confirmation to generate the link.
-              </p>
-            )}
           </div>
         )}
 
-        {/* Footer Note */}
-        <div className="mt-8 pt-6 border-t border-slate-800/60 w-full flex items-center justify-center gap-2 text-slate-400 text-xs font-medium">
-          <CalendarCheck weight="fill" className="text-indigo-400 text-sm" />
-          <span>Google Calendar & Meet integration active for Mentor & Student</span>
-        </div>
+        {isHost && onUpdateLink && (
+          <div className="mt-8 w-full max-w-lg p-5 rounded-2xl bg-slate-800/50 border border-slate-700 text-left">
+            <label className="block text-xs font-bold text-slate-300 mb-2 uppercase tracking-wide">
+              {isValidMeetLink ? "Update Meeting Link" : "Set Meeting Link"}
+            </label>
+            <form onSubmit={handleSync} className="flex gap-2">
+              <input
+                type="url"
+                required
+                placeholder="https://meet.google.com/..."
+                defaultValue={meetLink || ""}
+                onChange={e => {
+                  const val = e.target.value;
+                  // We store the current input in a ref or state if needed, or pass it directly.
+                  // For simplicity, we can get it from the form element in handleSync.
+                }}
+                name="linkInput"
+                className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-brand-500 transition-colors"
+              />
+              <button
+                type="submit"
+                disabled={syncing || isGenerating}
+                className="px-4 py-2.5 bg-brand-600 hover:bg-brand-500 text-white font-bold text-sm rounded-xl transition-colors disabled:opacity-50 flex items-center gap-2 shrink-0"
+              >
+                {syncing || isGenerating ? <ArrowsClockwise className="animate-spin text-lg" /> : <Check className="text-lg" />}
+                Save
+              </button>
+            </form>
+          </div>
+        )}
       </div>
     </div>
   );

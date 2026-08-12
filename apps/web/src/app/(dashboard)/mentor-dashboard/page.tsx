@@ -738,12 +738,7 @@ export default function MentorDashboard() {
               <SlidersHorizontal weight="bold" className="text-slate-400 text-sm" /> Quick Action Center
             </span>
             <div className="flex flex-wrap items-center gap-2">
-              <Link 
-                href="/mentor-dashboard/proposals"
-                className="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-3.5 py-1.5 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 shadow-2xs transition-colors flex items-center gap-1.5"
-              >
-                <CalendarPlus weight="fill" className="text-purple-500 text-sm" /> + Session Proposal
-              </Link>
+
               <Link 
                 href="/mentor-dashboard/availability"
                 className="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-3.5 py-1.5 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 shadow-2xs transition-colors flex items-center gap-1.5"
@@ -897,12 +892,7 @@ export default function MentorDashboard() {
                 <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">Students subscribed to your continuous guidance plan</p>
               </div>
               <div className="flex items-center gap-2">
-                <Link 
-                  href="/mentor-dashboard/proposals"
-                  className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-3.5 py-2 rounded-xl font-extrabold text-xs transition-colors border border-slate-200 dark:border-slate-700 flex items-center gap-1.5"
-                >
-                  <CalendarPlus weight="bold" /> Send Slots
-                </Link>
+
                 <Link 
                   href="/mentor-dashboard/group-meetings"
                   className="bg-brand-500 text-slate-950 hover:bg-brand-400 px-3.5 py-2 rounded-xl font-extrabold text-xs transition-colors flex items-center gap-1.5"
@@ -1654,33 +1644,25 @@ export default function MentorDashboard() {
                 <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
                   <CalendarPlus weight="fill" className="text-9xl text-blue-500" />
                 </div>
-                <div className="relative z-10 flex-1">
+                <div className="relative z-10 flex-1 w-full">
                   <h4 className="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
-                    <img src="https://www.gstatic.com/images/branding/product/1x/calendar_48dp.png" alt="Google Calendar" className="w-5 h-5" />
-                    Automated Google Meet Scheduling
+                    <VideoCamera weight="fill" className="text-brand-500" />
+                    Personal Meeting Link (Default)
                   </h4>
-                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
-                    Connect your Google Calendar so HelpSathi can automatically generate <strong>Google Meet</strong> links for your booked sessions. Because the meeting is created on your calendar, you are automatically the Host and can admit students without waiting!
+                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-2 mb-4 leading-relaxed max-w-2xl">
+                    Paste your permanent meeting room link here (e.g. from Zoom, Google Meet, or Microsoft Teams). This link will automatically be provided to students when they book a new 1-on-1 scheduled call or when you create a new group meeting. 
+                    <br/><br/>
+                    <em>Note: You can always change this link later, or edit the link for a specific scheduled meeting.</em>
                   </p>
-                </div>
-                <div className="relative z-10 shrink-0">
-                  {profileData?.googleCalendarConnected ? (
-                    <div className="flex flex-col items-end gap-2">
-                      <div className="px-3.5 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center gap-1.5 border border-emerald-200/50 dark:border-emerald-500/20">
-                        <CheckCircle weight="fill" /> Calendar Connected
-                      </div>
-                      <a href="/api/auth/google-calendar/connect" className="text-[10px] text-slate-400 hover:text-brand-500 underline underline-offset-2">
-                        Reconnect Account
-                      </a>
-                    </div>
-                  ) : (
-                    <a
-                      href="/api/auth/google-calendar/connect"
-                      className="px-5 py-2.5 rounded-xl text-sm font-extrabold bg-blue-500 hover:bg-blue-600 text-white shadow-md shadow-blue-500/20 transition-all flex items-center gap-2"
-                    >
-                      Connect Google Calendar
-                    </a>
-                  )}
+                  <div className="w-full max-w-lg">
+                    <input 
+                      type="url"
+                      placeholder="https://meet.google.com/abc-defg-hij"
+                      value={profileData?.personalMeetingLink || ""}
+                      onChange={(e) => setProfileData({...profileData, personalMeetingLink: e.target.value})}
+                      className="w-full border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 bg-slate-50/50 dark:bg-slate-950 text-slate-900 dark:text-white transition-all font-medium"
+                    />
+                  </div>
                 </div>
               </div>
             </div>

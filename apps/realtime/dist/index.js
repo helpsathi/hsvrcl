@@ -12,7 +12,14 @@ const client_1 = require("@prisma/client");
 const pg_1 = require("pg");
 const adapter_pg_1 = require("@prisma/adapter-pg");
 const jose_1 = require("jose");
+const web_push_1 = __importDefault(require("web-push"));
 dotenv_1.default.config();
+const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || process.env.VAPID_PUBLIC_KEY;
+const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
+const vapidSubject = process.env.VAPID_SUBJECT || "mailto:support@helpsathi.com";
+if (vapidPublicKey && vapidPrivateKey) {
+    web_push_1.default.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
+}
 const secretKey = process.env.JWT_SECRET;
 if (process.env.NODE_ENV === "production" && (!secretKey || secretKey === "fallback_only_for_development_secret_do_not_use_in_prod")) {
     console.error("SECURITY WARNING: JWT_SECRET environment variable is missing or insecure in production mode!");
@@ -214,9 +221,12 @@ io.on('connection', (socket) => {
         const { sessionId, content } = data;
         const senderId = socket.data.userId || data.senderId; // Prevent sender spoofing
         try {
-            // 1. Verify session exists and is ACTIVE
             const session = await prisma.chatSession.findUnique({
                 where: { id: sessionId },
+                include: {
+                    mentor: { select: { name: true } },
+                    student: { select: { name: true } },
+                }
             });
             if (!session || session.status !== 'ACTIVE') {
                 socket.emit('error', 'Chat session is not active.');
@@ -330,11 +340,64 @@ io.on('connection', (socket) => {
             const isReceiverInSession = receiverSockets && [...receiverSockets].some(sid => sessionRoom?.has(sid));
             if (!isReceiverInSession) {
                 io.to(`user_${receiverId}`).emit('receive_message', message);
+                // Push notification logic
+                if (vapidPublicKey && vapidPrivateKey) {
+                    try {
+                        const subs = await prisma.pushSubscription.findMany({ where: { userId: receiverId } });
+                        if (subs.length > 0) {
+                            const anySession = session;
+                            const senderName = senderId === anySession.mentorId ? anySession.mentor.name : anySession.student.name;
+                            const payload = JSON.stringify({
+                                title: `New message from ${senderName}`,
+                                body: content.length > 50 ? content.substring(0, 50) + "..." : content,
+                                url: `/chats/${sessionId}`,
+                                tag: `chat-${sessionId}`
+                            });
+                            await Promise.all(subs.map(async (sub) => {
+                                try {
+                                    await web_push_1.default.sendNotification({
+                                        endpoint: sub.endpoint,
+                                        keys: { p256dh: sub.p256dh, auth: sub.auth }
+                                    }, payload);
+                                }
+                                catch (err) {
+                                    if (err?.statusCode === 410 || err?.statusCode === 404) {
+                                        await prisma.pushSubscription.delete({ where: { id: sub.id } }).catch(() => { });
+                                    }
+                                }
+                            }));
+                        }
+                    }
+                    catch (e) {
+                        console.error("Failed to send push notification", e);
+                    }
+                }
             }
         }
         catch (err) {
             console.error('Send message error:', err);
             socket.emit('error', 'Failed to send message.');
+        }
+    });
+    // Mark Read
+    socket.on('mark_read', async (sessionId) => {
+        const userId = socket.data.userId;
+        if (!userId)
+            return;
+        try {
+            await prisma.message.updateMany({
+                where: {
+                    sessionId,
+                    senderId: { not: userId },
+                    isRead: false
+                },
+                data: { isRead: true }
+            });
+            // Optionally notify the other user that messages were read
+            socket.to(sessionId).emit('messages_read', { byUserId: userId });
+        }
+        catch (err) {
+            console.error('Mark read error:', err);
         }
     });
     // Edit Message

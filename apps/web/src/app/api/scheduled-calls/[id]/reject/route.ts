@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { deleteGoogleMeetEvent } from "@/lib/googleCalendar";
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -54,12 +53,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         data: { status: "REJECTED" as any },
       });
     });
-
-    if (scheduledCall.eventId) {
-      await deleteGoogleMeetEvent(scheduledCall.eventId).catch((err) =>
-        console.error("Failed to cancel Google Calendar event:", err)
-      );
-    }
 
     return NextResponse.json({ success: true, scheduledCall: updatedCall });
   } catch (error: any) {

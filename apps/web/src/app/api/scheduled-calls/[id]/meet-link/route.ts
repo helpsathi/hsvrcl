@@ -1,0 +1,43 @@
+import { NextResponse } from "next/server";
+import { getSession } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+
+export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params;
+    const session = await getSession();
+    
+    if (!session || session.role !== "MENTOR") {
+      return NextResponse.json({ error: "Unauthorized. Only mentors can update meeting links." }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const { meetLink } = body;
+
+    if (!meetLink || !/^https?:\/\//i.test(meetLink)) {
+      return NextResponse.json({ error: "Invalid meeting link. Must start with http:// or https://" }, { status: 400 });
+    }
+
+    const call = await prisma.scheduledChat.findUnique({
+      where: { id }
+    });
+
+    if (!call) {
+      return NextResponse.json({ error: "Scheduled call not found" }, { status: 404 });
+    }
+
+    if (call.mentorId !== session.userId) {
+      return NextResponse.json({ error: "Forbidden. This is not your scheduled call." }, { status: 403 });
+    }
+
+    const updatedCall = await prisma.scheduledChat.update({
+      where: { id },
+      data: { meetLink }
+    });
+
+    return NextResponse.json({ success: true, call: updatedCall });
+  } catch (error: any) {
+    console.error("Update Meet Link Error:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}

@@ -92,16 +92,7 @@ export function Sidebar() {
               <VideoCamera weight={pathname?.startsWith("/mentor-dashboard/group-meetings") ? "fill" : "regular"} className="text-xl" />
               Group Sessions
             </Link>
-            <Link
-              href="/mentor-dashboard/proposals"
-              className={cn(
-                "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-colors",
-                pathname?.startsWith("/mentor-dashboard/proposals") ? "text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-950/50" : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60"
-              )}
-            >
-              <Sparkle weight={pathname?.startsWith("/mentor-dashboard/proposals") ? "fill" : "regular"} className="text-xl" />
-              Session Proposals
-            </Link>
+
             <Link
               href="/mentor-dashboard/availability"
               className={cn(

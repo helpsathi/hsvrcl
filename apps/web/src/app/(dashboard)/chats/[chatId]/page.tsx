@@ -176,15 +176,11 @@ export default function ChatRoomPage() {
           forceNew: true,
         });
 
-        if (socketRef.current.connected) {
-          setIsConnected(true);
-          socketRef.current.emit("join_session", chatId);
-        }
-
         socketRef.current.on("connect", () => {
           setIsConnected(true);
           setSendError(null);
           socketRef.current?.emit("join_session", chatId);
+          socketRef.current?.emit("mark_read", chatId);
         });
 
         socketRef.current.on("disconnect", () => {
@@ -209,6 +205,7 @@ export default function ChatRoomPage() {
             if (prev.some(m => m.id === message.id)) return prev;
             return [...prev, message];
           });
+          socketRef.current?.emit("mark_read", chatId);
         });
 
         socketRef.current.on("message_edited", (updatedMsg: Message) => {

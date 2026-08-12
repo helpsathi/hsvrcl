@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { createGoogleMeetEvent } from "@/lib/googleCalendar";
 import { dispatchNotification } from "@/lib/notifications";
 import { getOrSyncMentorAvailability } from "@/lib/mentor-availability";
 
@@ -192,33 +191,10 @@ export async function POST(req: Request) {
           notes: notes || null,
           status: "PENDING",
           estimatedCost,
+          meetLink: mentorProfile.personalMeetingLink || null,
         },
       });
     });
-
-    // Generate Google Meet Link and invitations only after successful booking transaction
-    let finalScheduledCall = scheduledCall;
-    try {
-      const { meetLink, eventId } = await createGoogleMeetEvent({
-        title: `HelpSathi Consultation: ${studentUser?.name || "Student"} & ${mentorProfile.user.name}`,
-        description: `Scheduled mentorship consultation on HelpSathi.\n\nNotes from Student:\n${notes || "None"}`,
-        startTime: scheduledDate,
-        durationMinutes: Number(durationMinutes),
-        attendeeEmails: [studentUser?.email, mentorProfile.user.email],
-        // @ts-ignore: field was just added to schema
-        mentorRefreshToken: mentorProfile.googleCalendarRefreshToken, // Use mentor's specific token
-      });
-      if (meetLink) {
-        finalScheduledCall = await prisma.scheduledChat.update({
-          where: { id: scheduledCall.id },
-          data: { meetLink, eventId: eventId || null },
-        });
-      } else {
-        console.warn("Meet link was empty — call created without video link");
-      }
-    } catch (meetError) {
-      console.error("Post-booking Google Meet creation failed, call created without link:", meetError);
-    }
 
     // Dispatch instant real-time & push alerts to Mentor and Student
     await dispatchNotification({
@@ -231,13 +207,13 @@ export async function POST(req: Request) {
 
     await dispatchNotification({
       userId: session.userId,
-      title: "✅ Booking Confirmed!",
-      message: `Your consultation call with ${mentorProfile.user.name} has been successfully scheduled!`,
+      title: "📅 Booking Confirmed!",
+      message: `Your ${durationMinutes}-min call with ${mentorProfile.user.name} is booked for ${scheduledDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}.`,
       type: "BOOKING",
-      link: "/scheduled-calls",
+      link: "/dashboard",
     });
 
-    return NextResponse.json({ success: true, scheduledCall: finalScheduledCall });
+    return NextResponse.json({ success: true, call: scheduledCall });
   } catch (error: any) {
     console.error("Book Call Error:", error);
     if (error.message.startsWith("INSUFFICIENT_FUNDS")) {

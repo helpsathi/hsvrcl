@@ -49,14 +49,18 @@ export default function GroupMeetingRoomPage() {
     fetchMeeting();
   }, [id, user]);
 
-  const handleGenerateLink = async () => {
+  const handleUpdateLink = async (newLink: string) => {
     try {
-      const res = await fetch(`/api/mentors/group-meetings/${id}/generate-meet`, { method: "POST" });
+      const res = await fetch(`/api/mentors/group-meetings/${id}/meet-link`, { 
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ meetLink: newLink })
+      });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to generate Google Meet link");
+      if (!res.ok) throw new Error(data.error || "Failed to update meeting link");
       if (data.meeting) {
         setMeeting(data.meeting);
-        toast.success("Google Meet link synchronized successfully! 🔗");
+        toast.success("Meeting link updated successfully! 🔗");
       }
     } catch (err: any) {
       toast.error(err.message || "Failed to sync link");
@@ -124,7 +128,7 @@ export default function GroupMeetingRoomPage() {
             scheduledAt={meeting.scheduledAt}
             durationMinutes={meeting.durationMinutes ?? 60}
             isHost={isHost}
-            onGenerateLink={handleGenerateLink}
+            onUpdateLink={handleUpdateLink}
             participantName={meeting.mentor.name}
             participantRole="Host"
           />

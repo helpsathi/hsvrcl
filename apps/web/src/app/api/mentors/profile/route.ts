@@ -164,7 +164,7 @@ export async function PUT(req: Request) {
     }
 
     const body = await req.json();
-    const { bio, perMinutePrice, callPricePerMinute, monthlyPrice, isOnline, upiId, bankDetails, availability, username, holidayMode, holidayUntil, resumeUrl, linkedinUrl, categories, skills, languages, freeTrial, subscribedBookingFree, bookingNoticeHours } = body;
+    const { bio, perMinutePrice, callPricePerMinute, monthlyPrice, isOnline, upiId, bankDetails, availability, username, holidayMode, holidayUntil, resumeUrl, linkedinUrl, categories, skills, languages, freeTrial, subscribedBookingFree, bookingNoticeHours, personalMeetingLink } = body;
 
     let mentorProfile = await prisma.mentorProfile.findUnique({
       where: { userId: session.userId },
@@ -214,6 +214,12 @@ export async function PUT(req: Request) {
     if (freeTrial !== undefined) dataToUpdate.freeTrial = Boolean(freeTrial);
     if (subscribedBookingFree !== undefined) dataToUpdate.subscribedBookingFree = Boolean(subscribedBookingFree);
     if (bookingNoticeHours !== undefined) dataToUpdate.bookingNoticeHours = Number(bookingNoticeHours);
+    if (personalMeetingLink !== undefined) {
+      if (personalMeetingLink && !/^https?:\/\//i.test(personalMeetingLink)) {
+        return NextResponse.json({ error: "Invalid URL. Must start with http:// or https://" }, { status: 400 });
+      }
+      dataToUpdate.personalMeetingLink = personalMeetingLink;
+    }
 
     if (username !== undefined) {
       if (typeof username === "string" && username.trim() !== "") {

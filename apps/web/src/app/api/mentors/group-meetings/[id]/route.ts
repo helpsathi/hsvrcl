@@ -76,20 +76,7 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Attempt to delete Google Meet event
-    if (groupMeeting.eventId) {
-      const mentorProfile = await prisma.mentorProfile.findUnique({
-        where: { userId: session.userId },
-        select: { googleCalendarRefreshToken: true }
-      });
-      
-      // We import deleteGoogleMeetEvent dynamically or add it at the top
-      const { deleteGoogleMeetEvent } = await import("@/lib/googleCalendar");
-      // @ts-ignore: field was just added
-      await deleteGoogleMeetEvent(groupMeeting.eventId, mentorProfile?.googleCalendarRefreshToken).catch(err => 
-        console.error("Failed to delete Google Meet event:", err)
-      );
-    }
+    // We no longer attempt to delete Google Meet events since we don't use Calendar API
 
     // Delete meeting from database
     await prisma.groupMeeting.delete({

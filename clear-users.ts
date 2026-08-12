@@ -144,19 +144,7 @@ async function main() {
     });
     console.log("- Deleted GroupMeeting");
 
-    // 11. Delete SessionProposalAcceptance
-    await tx.sessionProposalAcceptance.deleteMany({
-      where: { studentId: { in: userIds } }
-    });
-    console.log("- Deleted SessionProposalAcceptance");
 
-    // 12. Delete SessionProposal
-    if (mentorProfileIds.length > 0) {
-      await tx.sessionProposal.deleteMany({
-        where: { mentorProfileId: { in: mentorProfileIds } }
-      });
-      console.log("- Deleted SessionProposal");
-    }
 
     // 13. Delete WithdrawalRequest
     if (mentorProfileIds.length > 0) {
