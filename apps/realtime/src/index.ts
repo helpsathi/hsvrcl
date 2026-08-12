@@ -396,7 +396,7 @@ io.on('connection', (socket) => {
       const message = await prisma.message.findUnique({ where: { id: messageId } });
       if (!message || message.senderId !== senderId || message.sessionId !== sessionId) {
         console.error(`[Edit Error] messageId: ${messageId}, foundMessage: ${!!message}, msgSender: ${message?.senderId}, socketSender: ${senderId}, msgSession: ${message?.sessionId}, requestedSession: ${sessionId}`);
-        socket.emit('error', 'Unauthorized to edit this message.');
+        socket.emit('error', `Unauthorized to edit this message. (Debug: found=${!!message}, msgSender=${message?.senderId}, reqSender=${senderId}, msgSession=${message?.sessionId}, reqSession=${sessionId})`);
         return;
       }
 
