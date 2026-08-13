@@ -97,7 +97,7 @@ export default function MeetingRoomPage() {
   const otherUser = isHost ? call.student : call.mentor;
 
   return (
-    <div className="flex flex-col h-[100dvh] w-full bg-slate-50 dark:bg-slate-950 overflow-hidden relative">
+    <div className="flex flex-col h-full min-h-full w-full bg-slate-50 dark:bg-slate-950 overflow-hidden relative">
       {/* Header */}
       <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl px-4 py-3 border-b border-slate-200/60 dark:border-slate-800/60 flex items-center gap-4 z-30 shrink-0">
         <button 

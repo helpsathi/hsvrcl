@@ -37,7 +37,10 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
     const updatedMeeting = await prisma.groupMeeting.update({
       where: { id },
-      data: { meetLink: formattedLink }
+      data: { meetLink: formattedLink },
+      include: {
+        mentor: { select: { id: true, name: true, avatar: true } }
+      }
     });
 
     return NextResponse.json({ success: true, meeting: updatedMeeting });

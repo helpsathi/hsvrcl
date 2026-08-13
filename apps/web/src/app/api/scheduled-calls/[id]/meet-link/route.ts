@@ -37,7 +37,11 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
     const updatedCall = await prisma.scheduledChat.update({
       where: { id },
-      data: { meetLink: formattedLink }
+      data: { meetLink: formattedLink },
+      include: {
+        student: { select: { id: true, name: true, avatar: true } },
+        mentor: { select: { id: true, name: true, avatar: true } }
+      }
     });
 
     return NextResponse.json({ success: true, call: updatedCall });
