@@ -174,6 +174,7 @@ export default function ChatRoomPage() {
           reconnectionAttempts: 10,
           reconnectionDelay: 1500,
           forceNew: true,
+          transports: ["websocket"],
         });
 
         socketRef.current.on("connect", () => {

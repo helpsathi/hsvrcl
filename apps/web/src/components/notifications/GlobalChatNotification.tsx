@@ -137,6 +137,7 @@ export function GlobalChatNotification() {
           auth: { token: tokenData.token },
           reconnectionAttempts: 5,
           reconnectionDelay: 2000,
+          transports: ["websocket"],
         });
         socketRef.current = socket;
 
