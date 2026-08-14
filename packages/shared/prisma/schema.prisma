@@ -393,6 +393,7 @@ model Announcement {
   title          String
   content        String
   targetAudience String         @default("SUBSCRIBERS")
+  targetStudentIds String[]     @default([])
   attachments    String[]       @default([])
   links          String[]       @default([])
   createdAt      DateTime       @default(now())

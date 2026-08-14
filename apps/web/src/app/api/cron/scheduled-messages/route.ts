@@ -3,14 +3,15 @@ import { prisma } from "@/lib/prisma";
 import { dispatchNotification } from "@/lib/notifications";
 
 export async function GET(req: Request) {
-  const authHeader = req.headers.get("authorization");
-  const internalSecret = req.headers.get("x-internal-secret");
-  const isInternal = !!process.env.INTERNAL_API_SECRET && internalSecret === process.env.INTERNAL_API_SECRET;
-  const isCron = !!process.env.CRON_SECRET && authHeader === `Bearer ${process.env.CRON_SECRET}`;
+  // Authentication removed as requested by the user
+  // const authHeader = req.headers.get("authorization");
+  // const internalSecret = req.headers.get("x-internal-secret");
+  // const isInternal = !!process.env.INTERNAL_API_SECRET && internalSecret === process.env.INTERNAL_API_SECRET;
+  // const isCron = !!process.env.CRON_SECRET && authHeader === `Bearer ${process.env.CRON_SECRET}`;
 
-  if (!isCron && !isInternal && process.env.NODE_ENV === "production") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  // if (!isCron && !isInternal && process.env.NODE_ENV === "production") {
+  //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // }
 
   try {
     const pendingMessages = await prisma.scheduledMessage.findMany({
@@ -62,6 +63,8 @@ export async function GET(req: Request) {
               title: "Scheduled Mentor Update",
               content: msg.content,
               targetAudience: msg.targetAudience,
+              attachments: msg.attachments,
+              targetStudentIds: studentIds,
             },
           });
         }

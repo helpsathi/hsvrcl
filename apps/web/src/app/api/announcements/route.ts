@@ -24,6 +24,7 @@ export async function GET(req: Request) {
           { mentorId: null }, // Platform-wide announcements
           { targetAudience: "ALL" },
           { mentorId: { in: subscribedMentorIds } },
+          { targetStudentIds: { has: session.userId } }
         ],
       },
       include: {
