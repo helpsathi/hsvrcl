@@ -125,6 +125,7 @@ export default function ChatRoomPage() {
   const [isConnected, setIsConnected] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingMessageRef = useRef<string | null>(null);
   const [isOtherUserTyping, setIsOtherUserTyping] = useState(false);
 
   const scrollToBottom = () => {
@@ -202,6 +203,9 @@ export default function ChatRoomPage() {
         });
 
         socketRef.current.on("receive_message", (message: Message) => {
+          if (message.senderId === user.id) {
+            pendingMessageRef.current = null;
+          }
           setMessages((prev) => {
             if (prev.some(m => m.id === message.id)) return prev;
             return [...prev, message];
@@ -247,6 +251,10 @@ export default function ChatRoomPage() {
         socketRef.current.on("error", (msg: string) => {
           setSendError(msg);
           setError(msg);
+          if (pendingMessageRef.current) {
+            setNewMessage(pendingMessageRef.current);
+            pendingMessageRef.current = null;
+          }
         });
 
       } catch (err: any) {
@@ -294,43 +302,45 @@ export default function ChatRoomPage() {
     }, 2000);
   };
 
-  const handleSendMessage = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    const text = newMessage.trim();
-    if (!text || !user || !chatId) return;
-
-    if (!socketRef.current || !socketRef.current.connected) {
-      setSendError("Connecting to real-time server... Please wait a second and try again.");
-      return;
-    }
-
-    setSendError(null);
-
-    if (editingMessageId) {
-      socketRef.current.emit("edit_message", {
+    const handleSendMessage = async (e?: React.FormEvent) => {
+      if (e) e.preventDefault();
+      const text = newMessage.trim();
+      if (!text || !user || !chatId) return;
+  
+      if (!socketRef.current || !socketRef.current.connected) {
+        setSendError("Connecting to real-time server... Please wait a second and try again.");
+        return;
+      }
+  
+      setSendError(null);
+  
+      if (editingMessageId) {
+        socketRef.current.emit("edit_message", {
+          sessionId: chatId,
+          messageId: editingMessageId,
+          content: text,
+          senderId: user.id,
+        });
+        setEditingMessageId(null);
+        setNewMessage("");
+        return;
+      }
+  
+      if (chat?.status !== "ACTIVE" && !chat?.isSubscribed) return;
+  
+      pendingMessageRef.current = text;
+  
+      socketRef.current.emit("send_message", {
         sessionId: chatId,
-        messageId: editingMessageId,
-        content: text,
         senderId: user.id,
+        content: text,
       });
-      setEditingMessageId(null);
+  
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      socketRef.current.emit("stop_typing", { sessionId: chatId, senderId: user.id });
+  
       setNewMessage("");
-      return;
-    }
-
-    if (chat?.status !== "ACTIVE" && !chat?.isSubscribed) return;
-
-    socketRef.current.emit("send_message", {
-      sessionId: chatId,
-      senderId: user.id,
-      content: text,
-    });
-
-    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-    socketRef.current.emit("stop_typing", { sessionId: chatId, senderId: user.id });
-
-    setNewMessage("");
-  };
+    };
 
   // For subscribed users with a completed session — create a new free session and send
   const handleSubscribedSend = async (e: React.FormEvent) => {

@@ -616,9 +616,7 @@ export default function DashboardHome() {
       {/* Mentor Feed */}
       <div className="px-4 lg:px-6 py-3 flex items-center justify-between sticky top-0 z-20 bg-slate-50/90 dark:bg-slate-950/90 backdrop-blur-md border-b border-slate-200/50 dark:border-slate-800/60 mt-2 transition-colors">
         <h2 className="text-base font-bold text-slate-800 dark:text-white">Top Mentors</h2>
-        <button className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-1.5 rounded-full text-xs font-semibold text-slate-600 dark:text-slate-300 flex items-center gap-1 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-          <PhosphorIcons.Faders className="text-sm" /> Filters
-        </button>
+
       </div>
 
       <div className="p-4 lg:p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

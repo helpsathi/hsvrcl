@@ -306,9 +306,7 @@ function MentorsDirectoryContent() {
             `${filteredMentors.length} mentor${filteredMentors.length === 1 ? '' : 's'} found${searchQuery ? ` for "${searchQuery}"` : ''}`
           )}
         </h2>
-        <button className="text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 flex items-center gap-1 transition-colors">
-          <Faders /> Advanced Filters
-        </button>
+
       </div>
 
       {/* Mentor Grid */}

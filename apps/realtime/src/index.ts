@@ -388,8 +388,23 @@ io.on('connection', (socket) => {
       const session = await prisma.chatSession.findUnique({
         where: { id: sessionId },
         include: {
-          mentor: { select: { name: true } },
-          student: { select: { name: true } },
+          mentor: { 
+            select: { 
+              name: true, 
+              mentorProfile: { select: { id: true } },
+              pushSubscriptions: true 
+            } 
+          },
+          student: { 
+            select: { 
+              name: true,
+              wallet: true,
+              subscriptions: {
+                where: { isActive: true, endDate: { gt: new Date() } }
+              },
+              pushSubscriptions: true
+            } 
+          },
         }
       });
 
@@ -420,27 +435,13 @@ io.on('connection', (socket) => {
         });
       }
 
-      // Check if student has active subscription
-      // Look up the mentor's profile ID to scope the subscription correctly
-      const mentorProfile = await prisma.mentorProfile.findUnique({
-        where: { userId: session.mentorId },
-        select: { id: true },
-      });
-      const activeSub = await prisma.subscription.findFirst({
-        where: {
-          studentId: session.studentId,
-          mentorId: mentorProfile?.id || "__none__",
-          isActive: true,
-          endDate: { gt: new Date() },
-        },
-      });
+      // Check if student has active subscription for this mentor
+      const mentorProfileId = session.mentor?.mentorProfile?.id || "__none__";
+      const activeSub = session.student?.subscriptions?.find(sub => sub.mentorId === mentorProfileId);
 
       // Re-evaluate duration and auto-end on EVERY message (only for pay-per-minute non-subscribed calls)
       if (firstMsgTime && session.perMinuteRate > 0 && !activeSub) {
-        const studentWallet = await prisma.wallet.findUnique({
-          where: { userId: session.studentId },
-        });
-        const balance = studentWallet?.balance || 0;
+        const balance = session.student?.wallet?.balance || 0;
         
         let maxDurationMins = Math.floor(balance / session.perMinuteRate);
         if (session.isFreeTrial) {
@@ -523,10 +524,9 @@ io.on('connection', (socket) => {
         // Push notification logic
         if (vapidPublicKey && vapidPrivateKey) {
           try {
-            const subs = await prisma.pushSubscription.findMany({ where: { userId: receiverId } });
-            if (subs.length > 0) {
-              const anySession = session as any;
-              const senderName = senderId === anySession.mentorId ? anySession.mentor.name : anySession.student.name;
+            const subs = senderId === session.mentorId ? session.student?.pushSubscriptions : session.mentor?.pushSubscriptions;
+            if (subs && subs.length > 0) {
+              const senderName = senderId === session.mentorId ? session.mentor.name : session.student.name;
               const payload = JSON.stringify({
                 title: `New message from ${senderName}`,
                 body: content.length > 50 ? content.substring(0, 50) + "..." : content,
