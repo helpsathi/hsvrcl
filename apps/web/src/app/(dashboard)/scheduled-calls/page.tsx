@@ -298,7 +298,7 @@ export default function ScheduledCallsPage() {
                       )}
 
                       {/* Dispute Button for Student if the session has passed or completed recently */}
-                      {!isMentor && (call.status === "CONFIRMED" || call.status === "COMPLETED") && diffMinutes < 60 && (
+                      {!isMentor && (call.status === "CONFIRMED" || call.status === "COMPLETED") && diffMinutes < 60 && call.type !== "GROUP" && (
                         <button
                           disabled={processingId === call.id}
                           onClick={() => {
@@ -312,7 +312,7 @@ export default function ScheduledCallsPage() {
                         </button>
                       )}
 
-                      {call.status === "PENDING" && isMentor && !isPastPending && (
+                      {call.status === "PENDING" && isMentor && !isPastPending && call.type !== "GROUP" && (
                         <>
                           <button 
                             disabled={processingId === call.id}
@@ -331,7 +331,7 @@ export default function ScheduledCallsPage() {
                         </>
                       )}
 
-                      {(call.status === "PENDING" || call.status === "CONFIRMED" || call.status === "ACCEPTED") && (!isMentor || (isMentor && (call.status === "CONFIRMED" || call.status === "ACCEPTED"))) && (
+                      {(call.status === "PENDING" || call.status === "CONFIRMED" || call.status === "ACCEPTED") && (!isMentor || (isMentor && (call.status === "CONFIRMED" || call.status === "ACCEPTED"))) && call.type !== "GROUP" && (
                         <button 
                           disabled={processingId === call.id}
                           onClick={() => updateStatus(call.id, "CANCELLED")}
