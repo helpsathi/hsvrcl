@@ -18,6 +18,8 @@ interface ScheduledCall {
   status: "PENDING" | "CONFIRMED" | "CANCELLED" | "COMPLETED" | "RESCHEDULED" | "MISSED" | "ACCEPTED" | "REJECTED" | "DISPUTED";
   estimatedCost: number;
   meetLink: string | null;
+  type?: "ONE_ON_ONE" | "GROUP";
+  title?: string;
 }
 
 function CountdownTimer({ targetDate }: { targetDate: string }) {
@@ -72,14 +74,51 @@ export default function ScheduledCallsPage() {
   const fetchCalls = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/scheduled-calls?page=${page}&limit=${limit}&status=${activeTab}`);
+      const [res, groupRes] = await Promise.all([
+        fetch(`/api/scheduled-calls?page=${page}&limit=${limit}&status=${activeTab}`),
+        fetch(`/api/mentors/group-meetings?page=${page}&limit=${limit}&filter=${activeTab}`)
+      ]);
+      
       const data = await res.json();
-      if (res.ok) {
-        setCalls(data.calls || []);
-        if (data.pagination) {
-          setTotalPages(data.pagination.totalPages);
-          setTotalItems(data.pagination.total);
-        }
+      const groupData = await groupRes.json();
+      
+      let allCalls: ScheduledCall[] = [];
+      
+      if (res.ok && data.calls) {
+        allCalls = [...data.calls.map((c: any) => ({ ...c, type: "ONE_ON_ONE" }))];
+      }
+      
+      if (groupRes.ok && groupData.meetings) {
+        const groupMeetings = groupData.meetings.map((gm: any) => ({
+          id: gm.id,
+          studentId: "",
+          mentorId: gm.mentorId,
+          student: { name: "Group Session", avatar: "" },
+          mentor: gm.mentor,
+          scheduledAt: gm.scheduledAt,
+          durationMinutes: gm.durationMinutes,
+          status: "CONFIRMED",
+          estimatedCost: 0,
+          meetLink: gm.meetLink,
+          type: "GROUP",
+          title: gm.title
+        }));
+        allCalls = [...allCalls, ...groupMeetings];
+      }
+      
+      allCalls.sort((a, b) => {
+        const dateA = new Date(a.scheduledAt).getTime();
+        const dateB = new Date(b.scheduledAt).getTime();
+        return activeTab === "upcoming" ? dateA - dateB : dateB - dateA;
+      });
+      
+      setCalls(allCalls);
+      
+      if (data.pagination || groupData.pagination) {
+        const maxTotal = Math.max(data.pagination?.total || 0, groupData.pagination?.total || 0);
+        const maxPages = Math.max(data.pagination?.totalPages || 1, groupData.pagination?.totalPages || 1);
+        setTotalPages(maxPages);
+        setTotalItems(maxTotal);
       }
     } catch (err) {
       console.error(err);
@@ -167,20 +206,23 @@ export default function ScheduledCallsPage() {
                   
                   <div className="flex items-center gap-4 min-w-0">
                     <img 
-                      src={otherUser.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(otherUser.name)}`} 
+                      src={otherUser?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(otherUser?.name || 'User')}`} 
                       referrerPolicy="no-referrer"
-                      onError={(e) => { (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(otherUser.name)}`; }}
+                      onError={(e) => { (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(otherUser?.name || 'User')}`; }}
                       className="w-14 h-14 rounded-2xl object-cover border border-slate-200 dark:border-slate-700 shadow-sm shrink-0" 
                       alt="" 
                     />
                     <div className="min-w-0">
                       <h3 className="font-black text-slate-900 dark:text-white text-lg tracking-tight truncate flex items-center gap-2">
-                        {otherUser.name} <span className="text-xs font-extrabold text-slate-400 dark:text-slate-500">({isMentor ? 'Student' : 'Mentor'})</span>
+                        {call.type === "GROUP" ? call.title : otherUser?.name} 
+                        <span className="text-xs font-extrabold text-slate-400 dark:text-slate-500">
+                          ({call.type === "GROUP" ? 'Group Session' : isMentor ? 'Student' : 'Mentor'})
+                        </span>
                       </h3>
                       <p className="text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-300 mt-0.5">
                         {scheduledDate.toLocaleDateString("en-US", { weekday: 'short', month: 'short', day: 'numeric' })} at {scheduledDate.toLocaleTimeString("en-US", { hour: '2-digit', minute: '2-digit' })} (IST)
                       </p>
-                      <p className="text-[11px] font-black text-brand-600 dark:text-brand-400 mt-1">Duration: {call.durationMinutes} mins • Fee: ₹{call.estimatedCost}</p>
+                      <p className="text-[11px] font-black text-brand-600 dark:text-brand-400 mt-1">Duration: {call.durationMinutes} mins {call.type !== "GROUP" && `• Fee: ₹${call.estimatedCost}`}</p>
                     </div>
                   </div>
 
@@ -217,7 +259,7 @@ export default function ScheduledCallsPage() {
                             </a>
                           ) : (
                             <Link 
-                              href={`/meetings/${call.id}`} 
+                              href={call.type === "GROUP" ? (isMentor ? `/mentor-dashboard/group-meetings/${call.id}` : `/group-meetings/${call.id}`) : `/meetings/${call.id}`} 
                               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-bold rounded-xl flex items-center gap-1.5 shadow-sm transition"
                             >
                               <VideoCamera weight="fill" className="text-base" /> Setup Meeting
@@ -225,7 +267,7 @@ export default function ScheduledCallsPage() {
                           )}
                           {call.meetLink && (
                             <Link 
-                              href={`/meetings/${call.id}`} 
+                              href={call.type === "GROUP" ? (isMentor ? `/mentor-dashboard/group-meetings/${call.id}` : `/group-meetings/${call.id}`) : `/meetings/${call.id}`} 
                               className="px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl transition"
                               title="View Meeting Details & Lobby"
                             >
@@ -236,7 +278,7 @@ export default function ScheduledCallsPage() {
                       )}
 
                       {/* Mentor Complete Call Action */}
-                      {isMentor && (call.status === "CONFIRMED" || call.status === "ACCEPTED") && diffMinutes < 0 && (
+                      {isMentor && (call.status === "CONFIRMED" || call.status === "ACCEPTED") && diffMinutes < 0 && call.type !== "GROUP" && (
                         <button
                           disabled={processingId === call.id}
                           onClick={() => updateStatus(call.id, "COMPLETED")}
@@ -246,7 +288,7 @@ export default function ScheduledCallsPage() {
                         </button>
                       )}
 
-                      {!isMentor && (call.status === "CONFIRMED" || call.status === "COMPLETED" || diffMinutes < -call.durationMinutes) && (
+                      {!isMentor && (call.status === "CONFIRMED" || call.status === "COMPLETED" || diffMinutes < -call.durationMinutes) && call.type !== "GROUP" && (
                         <button
                           onClick={() => setReviewingMentor({ id: call.mentorId, name: call.mentor.name })}
                           className="px-3.5 py-2 bg-amber-500/15 text-amber-600 dark:text-amber-300 border border-amber-500/30 hover:bg-amber-500/25 text-xs sm:text-sm font-bold rounded-xl flex items-center gap-1.5 transition-all"
