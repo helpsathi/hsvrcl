@@ -266,7 +266,7 @@ export async function GET(req: Request) {
           student: { select: { name: true, avatar: true, email: true } },
           mentor: { select: { name: true, avatar: true, email: true } },
         },
-        orderBy: { createdAt: "desc" },
+        orderBy: { scheduledAt: statusFilter === "upcoming" ? "asc" : "desc" },
         skip,
         take: limit,
       }),

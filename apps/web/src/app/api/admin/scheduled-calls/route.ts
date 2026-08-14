@@ -40,7 +40,7 @@ export async function GET(req: Request) {
           student: { select: { id: true, name: true, email: true, avatar: true } },
           mentor: { select: { id: true, name: true, email: true, avatar: true } },
         },
-        orderBy: { createdAt: "desc" },
+        orderBy: { scheduledAt: "desc" },
         skip: (page - 1) * limit,
         take: limit,
       }),
