@@ -125,7 +125,11 @@ export async function GET(req: Request, { params }: { params: Promise<{ chatId: 
       freeTrialMaxMinutes
     };
 
-    return NextResponse.json({ success: true, chat: chatData });
+    return NextResponse.json({ 
+      success: true, 
+      chat: chatData,
+      serverTime: new Date().toISOString()
+    });
   } catch (error: any) {
     console.error("Fetch Chat Error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { 
   CalendarCheck, 
   MagnifyingGlass, 
@@ -37,10 +38,11 @@ interface ScheduledCallItem {
   };
 }
 
-export default function AdminScheduledCallsPage() {
+function AdminScheduledCallsContent() {
+  const searchParams = useSearchParams();
   const [calls, setCalls] = useState<ScheduledCallItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [statusFilter, setStatusFilter] = useState(searchParams.get("status") || "ALL");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -446,5 +448,13 @@ export default function AdminScheduledCallsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function AdminScheduledCallsPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-slate-500">Loading calls...</div>}>
+      <AdminScheduledCallsContent />
+    </Suspense>
   );
 }

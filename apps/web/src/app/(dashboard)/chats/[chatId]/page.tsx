@@ -98,6 +98,7 @@ export default function ChatRoomPage() {
   const [mentorProfileId, setMentorProfileId] = useState<string | null>(null);
   const [mentorMonthlyPrice, setMentorMonthlyPrice] = useState<number>(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const subscribedFileInputRef = useRef<HTMLInputElement>(null);
   
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
   const touchTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -121,6 +122,7 @@ export default function ChatRoomPage() {
   const socketRef = useRef<Socket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const serverTimeOffsetRef = useRef<number>(0);
 
   const [isConnected, setIsConnected] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
@@ -138,11 +140,13 @@ export default function ChatRoomPage() {
 
   // Start ticking the timer
   const startTimer = useCallback((startTime: Date) => {
+    if (timerRef.current) clearInterval(timerRef.current);
     setFirstMsgTime(startTime);
     setTimerStarted(true);
     timerRef.current = setInterval(() => {
-      const elapsed = Math.floor((Date.now() - startTime.getTime()) / 1000);
-      setElapsedSeconds(elapsed);
+      const accurateNow = Date.now() + serverTimeOffsetRef.current;
+      const elapsed = Math.floor((accurateNow - startTime.getTime()) / 1000);
+      setElapsedSeconds(Math.max(0, elapsed));
     }, 1000);
   }, []);
 
@@ -154,6 +158,9 @@ export default function ChatRoomPage() {
         const res = await fetch(`/api/chats/${chatId}`);
         const data = await res.json();
         if (!res.ok) throw new Error(data.error);
+        if (data.serverTime) {
+          serverTimeOffsetRef.current = new Date(data.serverTime).getTime() - Date.now();
+        }
         setChat(data.chat);
         setMessages(data.chat.messages);
         setIsPrivate(!!data.chat.isPrivate);
@@ -178,11 +185,27 @@ export default function ChatRoomPage() {
           transports: ["websocket"],
         });
 
-        socketRef.current.on("connect", () => {
+        socketRef.current.on("connect", async () => {
           setIsConnected(true);
           setSendError(null);
           socketRef.current?.emit("join_session", chatId);
           socketRef.current?.emit("mark_read", chatId);
+          
+          // Re-sync messages to catch any missed during disconnect
+          try {
+            const syncRes = await fetch(`/api/chats/${chatId}`);
+            if (syncRes.ok) {
+              const syncData = await syncRes.json();
+              if (syncData.serverTime) {
+                serverTimeOffsetRef.current = new Date(syncData.serverTime).getTime() - Date.now();
+              }
+              if (syncData.chat?.messages) {
+                setMessages(syncData.chat.messages);
+              }
+            }
+          } catch (e) {
+            console.error("Failed to sync messages on reconnect", e);
+          }
         });
 
         socketRef.current.on("disconnect", () => {
@@ -192,6 +215,12 @@ export default function ChatRoomPage() {
         socketRef.current.on("connect_error", (err: any) => {
           console.error("Socket connection error:", err.message || err);
           setIsConnected(false);
+        });
+
+        socketRef.current.on("timer_started", (data: { firstMessageTime: string, isFreeTrial: boolean }) => {
+          if (!timerStarted) {
+            startTimer(new Date(data.firstMessageTime));
+          }
         });
 
         socketRef.current.on("user_typing", ({ senderId }: { senderId: string }) => {
@@ -426,6 +455,57 @@ export default function ChatRoomPage() {
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleSubscribedFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !chat || subscribedSending) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      setError("File size exceeds 10MB limit.");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      let msgContent = "";
+      if (data.fileType === "IMAGE") {
+        msgContent = `[IMAGE:${data.url}]`;
+      } else {
+        msgContent = `[PDF:${data.fileName}:${data.url}]`;
+      }
+
+      setSubscribedSending(true);
+      const initiateRes = await fetch("/api/chats/initiate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mentorId: chat.mentor.id }),
+      });
+      const initiateData = await initiateRes.json();
+
+      if (!initiateRes.ok) {
+        throw new Error(initiateData.error || "Failed to initiate chat");
+      }
+
+      router.push(`/chats/${initiateData.chatId}?msg=${encodeURIComponent(msgContent)}`);
+    } catch (err: any) {
+      setError(err.message);
+      setSubscribedSending(false);
+    } finally {
+      setUploading(false);
+      if (subscribedFileInputRef.current) subscribedFileInputRef.current.value = "";
     }
   };
   const handleEndChat = async () => {
@@ -965,6 +1045,28 @@ export default function ChatRoomPage() {
           ) : chat.isSubscribed && user.role === "STUDENT" ? (
             // Subscribed users: always show the composer to start a new free session
             <form onSubmit={handleSubscribedSend} className="flex items-end gap-2 px-1">
+              <input
+                type="file"
+                ref={subscribedFileInputRef}
+                onChange={handleSubscribedFileUpload}
+                accept="image/*,application/pdf"
+                className="hidden"
+              />
+              
+              <button
+                type="button"
+                onClick={() => subscribedFileInputRef.current?.click()}
+                disabled={uploading || subscribedSending}
+                className="w-11 h-11 shrink-0 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 rounded-full flex items-center justify-center shadow-md border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all disabled:opacity-50 mb-0.5"
+                title="Upload Image or PDF (Max 10MB)"
+              >
+                {uploading ? (
+                  <div className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <Paperclip weight="bold" className="text-xl" />
+                )}
+              </button>
+
               <div className="flex-1 bg-white dark:bg-slate-900 rounded-[28px] px-5 py-2.5 shadow-md shadow-slate-200/50 dark:shadow-none border border-indigo-300 dark:border-indigo-700 focus-within:border-indigo-500/50 focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all flex items-center gap-2">
                 <span className="text-xs font-bold text-indigo-500 shrink-0">✦ Subscribed</span>
                 <textarea

@@ -3,6 +3,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.sendWebPush = sendWebPush;
+exports.sendEmailNotification = sendEmailNotification;
 const express_1 = __importDefault(require("express"));
 const http_1 = require("http");
 const socket_io_1 = require("socket.io");
@@ -64,6 +66,104 @@ const prisma = pool
 app.get('/health', (req, res) => {
     res.json({ status: 'ok', service: 'realtime' });
 });
+app.get('/api/cron/scheduled-messages', async (req, res) => {
+    try {
+        const result = await processScheduledMessages();
+        res.json(result);
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+// Anti-Flood Debounce Tracker: userId -> category -> array of recent notification timestamps & items
+async function sendWebPush(userId, title, body, url = "/dashboard", tag = "notification") {
+    if (!vapidPublicKey || !vapidPrivateKey) {
+        if (process.env.NODE_ENV !== "production") {
+            console.log(`[DEV WEB PUSH SINK] To User: ${userId} | Title: ${title} | Body: ${body}`);
+        }
+        return;
+    }
+    try {
+        const subs = await prisma.pushSubscription.findMany({ where: { userId } });
+        if (subs.length === 0)
+            return;
+        const payload = JSON.stringify({ title, body, url, tag });
+        await Promise.all(subs.map(async (sub) => {
+            try {
+                await web_push_1.default.sendNotification({
+                    endpoint: sub.endpoint,
+                    keys: {
+                        p256dh: sub.p256dh,
+                        auth: sub.auth,
+                    },
+                }, payload);
+            }
+            catch (error) {
+                if (error?.statusCode === 410 || error?.statusCode === 404) {
+                    await prisma.pushSubscription.delete({ where: { id: sub.id } }).catch(() => { });
+                }
+                else {
+                    console.error("Failed to send Web Push to subscription endpoint:", error);
+                }
+            }
+        }));
+    }
+    catch (err) {
+        console.error("sendWebPush helper error:", err);
+    }
+}
+async function sendEmailNotification(email, subject, htmlContent) {
+    const apiKey = process.env.RESEND_API_KEY || process.env.SENDGRID_API_KEY;
+    if (!apiKey) {
+        if (process.env.NODE_ENV !== "production") {
+            console.log(`[DEV EMAIL SINK] To: ${email} | Subject: ${subject}`);
+        }
+        return false;
+    }
+    try {
+        if (process.env.RESEND_API_KEY) {
+            const res = await fetch("https://api.resend.com/emails", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
+                },
+                body: JSON.stringify({
+                    from: process.env.EMAIL_FROM || "HelpSathi <noreply@helpsathi.com>",
+                    to: email,
+                    subject,
+                    html: htmlContent
+                })
+            });
+            return res.ok;
+        }
+        else if (process.env.SENDGRID_API_KEY) {
+            const rawFrom = process.env.EMAIL_FROM || "HelpSathi <noreply@helpsathi.com>";
+            const emailMatch = rawFrom.match(/<(.+)>/);
+            const fromEmail = emailMatch ? emailMatch[1] : rawFrom;
+            const fromName = emailMatch ? rawFrom.split("<")[0].trim() : "HelpSathi";
+            const res = await fetch("https://api.sendgrid.com/v3/mail/send", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${process.env.SENDGRID_API_KEY}`,
+                },
+                body: JSON.stringify({
+                    personalizations: [{ to: [{ email }] }],
+                    from: { email: fromEmail, name: fromName },
+                    subject,
+                    content: [{ type: "text/html", value: htmlContent }],
+                }),
+            });
+            return res.ok;
+        }
+        return true;
+    }
+    catch (error) {
+        console.error("Email dispatch failed:", error);
+        return false;
+    }
+}
 const recentUserEvents = new Map();
 app.post('/notify', async (req, res) => {
     try {
@@ -121,6 +221,27 @@ app.post('/notify', async (req, res) => {
         // Emit instantaneously to the user's private notification room
         io.to(`user_${userId}`).emit('global_notification', payload);
         console.log(`Delivered real-time notification to user_${userId} [Batched: ${isBatched}]`);
+        // 3. Dispatch Web Push notification directly to subscribed devices/browsers (Background)
+        sendWebPush(userId, finalTitle, finalMessage, link, eventCategory).catch((err) => console.error("Web Push helper trigger failed:", err));
+        // 4. Dispatch transactional email alert asynchronously for high-priority notification types if configured
+        if (["BOOKING", "PAYMENT", "PAYOUT", "ACCOUNT"].includes(eventCategory)) {
+            prisma.user.findUnique({ where: { id: userId }, select: { email: true, name: true } })
+                .then((u) => {
+                if (u?.email) {
+                    sendEmailNotification(u.email, `${finalTitle} | HelpSathi Notification`, `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 8px;">
+                <h2 style="color: #4338ca;">${finalTitle}</h2>
+                <p style="font-size: 16px; color: #333;">Hello ${u.name || "User"},</p>
+                <p style="font-size: 16px; color: #555;">${finalMessage}</p>
+                <div style="margin: 25px 0;">
+                  <a href="${process.env.NEXT_PUBLIC_APP_URL || "https://helpsathi.com"}${link}" style="background: #4338ca; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">View Details</a>
+                </div>
+                <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+                <p style="font-size: 12px; color: #888;">Thank you for using HelpSathi. If you did not expect this message, please check your account settings.</p>
+              </div>`).catch(err => console.error("Email helper trigger failed:", err));
+                }
+            })
+                .catch((e) => console.error("Failed user fetch for email notification:", e));
+        }
         return res.json({ success: true, batched: isBatched, payload });
     }
     catch (error) {
@@ -224,8 +345,23 @@ io.on('connection', (socket) => {
             const session = await prisma.chatSession.findUnique({
                 where: { id: sessionId },
                 include: {
-                    mentor: { select: { name: true } },
-                    student: { select: { name: true } },
+                    mentor: {
+                        select: {
+                            name: true,
+                            mentorProfile: { select: { id: true } },
+                            pushSubscriptions: true
+                        }
+                    },
+                    student: {
+                        select: {
+                            name: true,
+                            wallet: true,
+                            subscriptions: {
+                                where: { isActive: true, endDate: { gt: new Date() } }
+                            },
+                            pushSubscriptions: true
+                        }
+                    },
                 }
             });
             if (!session || session.status !== 'ACTIVE') {
@@ -250,26 +386,12 @@ io.on('connection', (socket) => {
                     isFreeTrial: session.isFreeTrial,
                 });
             }
-            // Check if student has active subscription
-            // Look up the mentor's profile ID to scope the subscription correctly
-            const mentorProfile = await prisma.mentorProfile.findUnique({
-                where: { userId: session.mentorId },
-                select: { id: true },
-            });
-            const activeSub = await prisma.subscription.findFirst({
-                where: {
-                    studentId: session.studentId,
-                    mentorId: mentorProfile?.id || "__none__",
-                    isActive: true,
-                    endDate: { gt: new Date() },
-                },
-            });
+            // Check if student has active subscription for this mentor
+            const mentorProfileId = session.mentor?.mentorProfile?.id || "__none__";
+            const activeSub = session.student?.subscriptions?.find(sub => sub.mentorId === mentorProfileId);
             // Re-evaluate duration and auto-end on EVERY message (only for pay-per-minute non-subscribed calls)
             if (firstMsgTime && session.perMinuteRate > 0 && !activeSub) {
-                const studentWallet = await prisma.wallet.findUnique({
-                    where: { userId: session.studentId },
-                });
-                const balance = studentWallet?.balance || 0;
+                const balance = session.student?.wallet?.balance || 0;
                 let maxDurationMins = Math.floor(balance / session.perMinuteRate);
                 if (session.isFreeTrial) {
                     const cfg = await prisma.platformConfig.findUnique({ where: { key: "free_trial_max_minutes" } });
@@ -343,10 +465,9 @@ io.on('connection', (socket) => {
                 // Push notification logic
                 if (vapidPublicKey && vapidPrivateKey) {
                     try {
-                        const subs = await prisma.pushSubscription.findMany({ where: { userId: receiverId } });
-                        if (subs.length > 0) {
-                            const anySession = session;
-                            const senderName = senderId === anySession.mentorId ? anySession.mentor.name : anySession.student.name;
+                        const subs = senderId === session.mentorId ? session.student?.pushSubscriptions : session.mentor?.pushSubscriptions;
+                        if (subs && subs.length > 0) {
+                            const senderName = senderId === session.mentorId ? session.mentor.name : session.student.name;
                             const payload = JSON.stringify({
                                 title: `New message from ${senderName}`,
                                 body: content.length > 50 ? content.substring(0, 50) + "..." : content,
@@ -619,4 +740,96 @@ const gracefulShutdown = (signal) => {
     }, 10000);
 };
 process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+// Setup cleanup handlers
+const cleanup = () => {
+    if (pool)
+        pool.end();
+    prisma.$disconnect();
+    process.exit(0);
+};
+// Background Task: Process Scheduled Messages
+async function processScheduledMessages() {
+    try {
+        const pendingMessages = await prisma.scheduledMessage.findMany({
+            where: {
+                status: "PENDING",
+                scheduledAt: { lte: new Date() }
+            }
+        });
+        let processedCount = 0;
+        for (const msg of pendingMessages) {
+            try {
+                let studentIds = [];
+                const mentorProfile = await prisma.mentorProfile.findUnique({
+                    where: { userId: msg.mentorId }
+                });
+                if (!mentorProfile) {
+                    throw new Error("Mentor profile not found");
+                }
+                if (msg.targetAudience === "ALL_SUBSCRIBERS") {
+                    const subs = await prisma.subscription.findMany({
+                        where: { mentorId: mentorProfile.id, isActive: true, endDate: { gt: new Date() } },
+                        select: { studentId: true }
+                    });
+                    studentIds = subs.map(s => s.studentId);
+                }
+                else if (msg.targetAudience === "ALL_PAST_STUDENTS") {
+                    const sessions = await prisma.chatSession.findMany({
+                        where: { mentorId: msg.mentorId },
+                        select: { studentId: true },
+                        distinct: ["studentId"]
+                    });
+                    studentIds = sessions.map(s => s.studentId);
+                }
+                else if (msg.targetAudience === "SPECIFIC") {
+                    studentIds = msg.targetStudentIds;
+                }
+                studentIds = Array.from(new Set(studentIds));
+                if (studentIds.length > 0 || msg.targetAudience === "ALL_SUBSCRIBERS" || msg.targetAudience === "ALL_PAST_STUDENTS") {
+                    await prisma.announcement.create({
+                        data: {
+                            mentorId: mentorProfile.id,
+                            title: "Scheduled Mentor Update",
+                            content: msg.content,
+                            targetAudience: msg.targetAudience,
+                            attachments: msg.attachments,
+                            targetStudentIds: studentIds,
+                        },
+                    });
+                }
+                if (studentIds.length > 0) {
+                    const BATCH_SIZE = 50;
+                    for (let i = 0; i < studentIds.length; i += BATCH_SIZE) {
+                        const batch = studentIds.slice(i, i + BATCH_SIZE);
+                        await Promise.all(batch.map((studentId) => sendWebPush(studentId, "📢 New Announcement from Mentor", msg.content.substring(0, 100) + (msg.content.length > 100 ? "..." : ""), `/announcements`)));
+                    }
+                }
+                await prisma.scheduledMessage.update({
+                    where: { id: msg.id },
+                    data: { status: "SENT" }
+                });
+                processedCount++;
+            }
+            catch (err) {
+                console.error(`Failed to process scheduled message ${msg.id}:`, err);
+                await prisma.scheduledMessage.update({
+                    where: { id: msg.id },
+                    data: { status: "FAILED" }
+                });
+            }
+        }
+        return { success: true, processedCount };
+    }
+    catch (error) {
+        console.error("Cron Scheduled Messages Error:", error);
+        throw error;
+    }
+}
+// Run automatically every 60 seconds
+setInterval(() => {
+    processScheduledMessages().catch(console.error);
+}, 60000);
+process.on('SIGTERM', cleanup);
+process.on('SIGINT', cleanup);
 process.on("SIGINT", () => gracefulShutdown("SIGINT"));

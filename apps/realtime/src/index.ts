@@ -74,6 +74,15 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'realtime' });
 });
 
+app.get('/api/cron/scheduled-messages', async (req, res) => {
+  try {
+    const result = await processScheduledMessages();
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Anti-Flood Debounce Tracker: userId -> category -> array of recent notification timestamps & items
 export async function sendWebPush(
   userId: string,
@@ -141,10 +150,10 @@ export async function sendEmailNotification(email: string, subject: string, html
         },
         body: JSON.stringify({
           from: process.env.EMAIL_FROM || "HelpSathi <noreply@helpsathi.com>",
-          to: [email],
+          to: email,
           subject,
-          html: htmlContent,
-        }),
+          html: htmlContent
+        })
       });
       return res.ok;
     } else if (process.env.SENDGRID_API_KEY) {
@@ -819,4 +828,114 @@ const gracefulShutdown = (signal: string) => {
 };
 
 process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+
+// Setup cleanup handlers
+const cleanup = () => {
+  if (pool) pool.end();
+  prisma.$disconnect();
+  process.exit(0);
+};
+
+// Background Task: Process Scheduled Messages
+async function processScheduledMessages() {
+  try {
+    const pendingMessages = await prisma.scheduledMessage.findMany({
+      where: {
+        status: "PENDING",
+        scheduledAt: { lte: new Date() }
+      }
+    });
+
+    let processedCount = 0;
+
+    for (const msg of pendingMessages) {
+      try {
+        let studentIds: string[] = [];
+        
+        const mentorProfile = await prisma.mentorProfile.findUnique({
+          where: { userId: msg.mentorId }
+        });
+
+        if (!mentorProfile) {
+          throw new Error("Mentor profile not found");
+        }
+
+        if (msg.targetAudience === "ALL_SUBSCRIBERS") {
+          const subs = await prisma.subscription.findMany({
+            where: { mentorId: mentorProfile.id, isActive: true, endDate: { gt: new Date() } },
+            select: { studentId: true }
+          });
+          studentIds = subs.map(s => s.studentId);
+        } else if (msg.targetAudience === "ALL_PAST_STUDENTS") {
+          const sessions = await prisma.chatSession.findMany({
+            where: { mentorId: msg.mentorId },
+            select: { studentId: true },
+            distinct: ["studentId"]
+          });
+          studentIds = sessions.map(s => s.studentId);
+        } else if (msg.targetAudience === "SPECIFIC") {
+          studentIds = msg.targetStudentIds;
+        }
+
+        studentIds = Array.from(new Set(studentIds));
+
+        if (studentIds.length > 0 || msg.targetAudience === "ALL_SUBSCRIBERS" || msg.targetAudience === "ALL_PAST_STUDENTS") {
+          await prisma.announcement.create({
+            data: {
+              mentorId: mentorProfile.id,
+              title: "Scheduled Mentor Update",
+              content: msg.content,
+              targetAudience: msg.targetAudience,
+              attachments: msg.attachments,
+              targetStudentIds: studentIds,
+            },
+          });
+        }
+
+        if (studentIds.length > 0) {
+          const BATCH_SIZE = 50;
+          for (let i = 0; i < studentIds.length; i += BATCH_SIZE) {
+            const batch = studentIds.slice(i, i + BATCH_SIZE);
+            await Promise.all(
+              batch.map((studentId) =>
+                sendWebPush(
+                  studentId,
+                  "📢 New Announcement from Mentor",
+                  msg.content.substring(0, 100) + (msg.content.length > 100 ? "..." : ""),
+                  `/announcements`
+                )
+              )
+            );
+          }
+        }
+
+        await prisma.scheduledMessage.update({
+          where: { id: msg.id },
+          data: { status: "SENT" }
+        });
+        processedCount++;
+
+      } catch (err) {
+        console.error(`Failed to process scheduled message ${msg.id}:`, err);
+        await prisma.scheduledMessage.update({
+          where: { id: msg.id },
+          data: { status: "FAILED" }
+        });
+      }
+    }
+    return { success: true, processedCount };
+  } catch (error) {
+    console.error("Cron Scheduled Messages Error:", error);
+    throw error;
+  }
+}
+
+// Run automatically every 60 seconds
+setInterval(() => {
+  processScheduledMessages().catch(console.error);
+}, 60000);
+
+process.on('SIGTERM', cleanup);
+process.on('SIGINT', cleanup);
 process.on("SIGINT", () => gracefulShutdown("SIGINT"));

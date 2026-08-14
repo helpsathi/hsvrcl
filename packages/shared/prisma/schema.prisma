@@ -3,6 +3,11 @@ generator client {
   output   = "../../../apps/web/node_modules/@prisma/client"
 }
 
+generator realtimeClient {
+  provider = "prisma-client-js"
+  output   = "../../../apps/realtime/node_modules/@prisma/client"
+}
+
 datasource db {
   provider = "postgresql"
 }
