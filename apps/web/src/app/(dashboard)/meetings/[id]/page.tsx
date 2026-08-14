@@ -122,8 +122,8 @@ export default function MeetingRoomPage() {
       </div>
 
       {/* Video Area / Lobby */}
-      <div className="flex-1 w-full bg-slate-950 p-4 pb-32 md:p-6 lg:p-8 flex items-center justify-center overflow-y-auto">
-        <div className="w-full h-auto max-w-4xl mx-auto">
+      <div className="flex-1 w-full bg-slate-950 p-4 pb-32 md:p-6 lg:p-8 flex flex-col overflow-y-auto">
+        <div className="w-full h-auto max-w-4xl mx-auto my-auto pt-4 md:pt-0">
           <GoogleMeetRoom
             title={`Consultation: ${call.mentor.name} & ${call.student.name}`}
             subtitle={isHost ? `Hosting mentorship consultation with ${call.student.name}` : `Mentorship appointment hosted by ${call.mentor.name}`}
