@@ -20,11 +20,9 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ postI
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
 
-    if (session.role === "MENTOR") {
-      if (existingPost.authorId !== session.userId) {
-        return NextResponse.json({ error: "Forbidden: You can only delete your own posts" }, { status: 403 });
-      }
-    } else {
+    const isAuthor = existingPost.authorId === session.userId;
+
+    if (!isAuthor) {
       const auth = requireAdminPermission(session, { requiredSubRoles: ["SUPER_ADMIN", "ADMIN", "MODERATOR"] });
       if (!auth.authorized) return auth.response!;
     }
@@ -48,11 +46,6 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ postId
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (session.role !== "MENTOR") {
-      const auth = requireAdminPermission(session, { requiredSubRoles: ["SUPER_ADMIN", "ADMIN", "MODERATOR"] });
-      if (!auth.authorized) return auth.response!;
-    }
-
     const { postId } = await params;
     const { content, isDeleted } = await req.json();
 
@@ -64,8 +57,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ postId
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
 
-    if (session.role === "MENTOR" && existingPost.authorId !== session.userId) {
-      return NextResponse.json({ error: "Forbidden: You can only edit your own posts" }, { status: 403 });
+    const isAuthor = existingPost.authorId === session.userId;
+
+    if (!isAuthor) {
+      const auth = requireAdminPermission(session, { requiredSubRoles: ["SUPER_ADMIN", "ADMIN", "MODERATOR"] });
+      if (!auth.authorized) return auth.response!;
     }
     
     const dataToUpdate: any = {};

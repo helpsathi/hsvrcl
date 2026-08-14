@@ -41,7 +41,9 @@ export default function AnnouncementsPage() {
   const { user } = useAuth();
   const [announcements, setAnnouncements] = useState<AnnouncementItem[]>([]);
   const [loading, setLoading] = useState(true);
-
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   // New Announcement Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newTitle, setNewTitle] = useState("");
@@ -64,16 +66,37 @@ export default function AnnouncementsPage() {
 
   const fetchAnnouncements = async () => {
     setLoading(true);
+    setPage(1);
     try {
-      const res = await fetch("/api/announcements");
+      const res = await fetch("/api/announcements?page=1&limit=20");
       if (res.ok) {
         const data = await res.json();
         setAnnouncements(data.announcements || []);
+        setHasMore(data.hasMore || false);
       }
     } catch (err) {
       console.error("Failed to load announcements:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadMoreAnnouncements = async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    const nextPage = page + 1;
+    try {
+      const res = await fetch(`/api/announcements?page=${nextPage}&limit=20`);
+      if (res.ok) {
+        const data = await res.json();
+        setAnnouncements((prev) => [...prev, ...(data.announcements || [])]);
+        setHasMore(data.hasMore || false);
+        setPage(nextPage);
+      }
+    } catch (err) {
+      console.error("Failed to load more announcements:", err);
+    } finally {
+      setLoadingMore(false);
     }
   };
 
@@ -551,6 +574,22 @@ export default function AnnouncementsPage() {
               </div>
             );
           })}
+          
+          {hasMore && (
+            <div className="flex justify-center pt-4 pb-8">
+              <button
+                onClick={loadMoreAnnouncements}
+                disabled={loadingMore}
+                className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 font-bold text-sm shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors disabled:opacity-50"
+              >
+                {loadingMore ? (
+                  <><ArrowsClockwise className="animate-spin text-lg" /> Loading...</>
+                ) : (
+                  "Load More Announcements"
+                )}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

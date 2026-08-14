@@ -10,6 +10,11 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const { searchParams } = new URL(req.url);
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const limit = parseInt(searchParams.get("limit") || "20", 10);
+    const skip = (page - 1) * limit;
+
     // Get active subscriptions for this student to include mentor announcements
     const activeSubs = await prisma.subscription.findMany({
       where: { studentId: session.userId, isActive: true },
@@ -37,12 +42,16 @@ export async function GET(req: Request) {
         },
       },
       orderBy: { createdAt: "desc" },
-      take: 50,
+      skip,
+      take: limit,
     });
+
+    const hasMore = announcements.length === limit;
 
     return NextResponse.json({
       success: true,
       announcements,
+      hasMore,
     });
   } catch (error: any) {
     console.error("GET /api/announcements error:", error);
