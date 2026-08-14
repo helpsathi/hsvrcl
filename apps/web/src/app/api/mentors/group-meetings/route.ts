@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { dispatchNotification } from "@/lib/notifications";
 
 export async function POST(req: Request) {
   try {
@@ -70,17 +71,19 @@ export async function POST(req: Request) {
       } as any
     });
 
-    // Notify all active subscribers
+    // Notify all active subscribers via dispatchNotification to ensure Web Push and Real-time delivery
     if (activeSubscriptions.length > 0) {
-      await prisma.notification.createMany({
-        data: activeSubscriptions.map(sub => ({
-          userId: sub.student.id,
-          type: "GROUP_MEETING",
-          title: "New Group Meeting Scheduled",
-          message: `Your mentor ${mentor?.name} scheduled a new group meeting: ${title}`,
-          link: `/group-meetings/${groupMeeting.id}`
-        }))
-      });
+      await Promise.all(
+        activeSubscriptions.map((sub) =>
+          dispatchNotification({
+            userId: sub.student.id,
+            type: "GROUP_MEETING",
+            title: "New Group Meeting Scheduled",
+            message: `Your mentor ${mentor?.name} scheduled a new group meeting: ${title}`,
+            link: `/group-meetings/${groupMeeting.id}`,
+          })
+        )
+      );
     }
 
     return NextResponse.json({ success: true, groupMeeting });
