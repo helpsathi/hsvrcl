@@ -228,16 +228,7 @@ export function MobileNav() {
                     </div>
                     <CaretRight className="text-slate-400 dark:text-slate-500 text-lg" />
                   </Link>
-                  <Link
-                    href="/mentor-dashboard/proposals"
-                    className="flex items-center justify-between px-3.5 py-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 font-bold text-sm transition-all"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Sparkle weight="duotone" className="text-2xl text-amber-500 dark:text-amber-400" />
-                      <span>Session Proposals</span>
-                    </div>
-                    <CaretRight className="text-slate-400 dark:text-slate-500 text-lg" />
-                  </Link>
+
                   <Link
                     href="/mentor-dashboard/availability"
                     className="flex items-center justify-between px-3.5 py-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 font-bold text-sm transition-all"

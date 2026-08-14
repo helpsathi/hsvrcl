@@ -19,9 +19,6 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     }
 
     let formattedLink = meetLink;
-    if (!/^https?:\/\//i.test(formattedLink)) {
-      formattedLink = `https://${formattedLink}`;
-    }
 
     const meeting = await prisma.groupMeeting.findUnique({
       where: { id }

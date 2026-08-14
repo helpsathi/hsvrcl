@@ -15,9 +15,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing required fields (title, date, and meeting link)" }, { status: 400 });
     }
 
-    if (!/^https?:\/\//i.test(meetLink)) {
-      return NextResponse.json({ error: "Invalid meeting link. Must start with http:// or https://" }, { status: 400 });
-    }
+
 
     const scheduledDate = new Date(scheduledAt);
     if (scheduledDate <= new Date()) {

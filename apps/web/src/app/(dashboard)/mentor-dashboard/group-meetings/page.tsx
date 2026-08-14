@@ -206,7 +206,7 @@ export default function MentorGroupMeetingsPage() {
             <div>
               <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Meeting Link</label>
               <input 
-                type="url" 
+                type="text" 
                 required
                 value={formData.meetLink}
                 onChange={e => setFormData({...formData, meetLink: e.target.value})}

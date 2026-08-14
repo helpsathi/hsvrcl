@@ -541,11 +541,11 @@ export default function BookCallPage() {
                 </div>
               )}
 
-              {/* Direct Action Button (Visible on both desktop & inside card on mobile) */}
+              {/* Direct Action Button (Visible only on desktop) */}
               <button
                 onClick={handleBook}
                 disabled={!canBook || insufficientBalance}
-                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white py-4 rounded-2xl font-extrabold text-base shadow-xl shadow-blue-500/25 transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:hover:scale-100"
+                className="hidden lg:flex w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white py-4 rounded-2xl font-extrabold text-base shadow-xl shadow-blue-500/25 transition-all items-center justify-center gap-2 disabled:opacity-40 disabled:hover:scale-100"
               >
                 {booking ? (
                   <><Spinner className="animate-spin text-xl" /> Scheduling Call...</>
@@ -558,7 +558,7 @@ export default function BookCallPage() {
         </div>
       </div>
 
-      {/* Mobile Sticky Bottom Glass Action Bar (Always visible on mobile without MobileNav collision) */}
+      {/* Mobile Sticky Bottom Glass Action Bar */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-white/95 dark:bg-slate-900/95 backdrop-blur-3xl border-t border-slate-200 dark:border-slate-800 shadow-[0_-4px_24px_rgba(0,0,0,0.15)] dark:shadow-[0_-4px_24px_rgba(0,0,0,0.5)] z-[50]">
         {selectedDate && selectedTime && (
           <div className="flex items-center justify-between mb-3 px-1">
@@ -578,7 +578,7 @@ export default function BookCallPage() {
         <button
           onClick={handleBook}
           disabled={!canBook || insufficientBalance}
-          className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white py-3.5 rounded-2xl font-extrabold text-base shadow-xl shadow-blue-500/25 transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:hover:scale-100"
+          className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white py-4 rounded-2xl font-extrabold text-base shadow-xl shadow-blue-500/25 transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:hover:scale-100"
         >
           {booking ? (
             <><Spinner className="animate-spin text-xl" /> Scheduling Call...</>
