@@ -42,7 +42,7 @@ function AdminScheduledCallsContent() {
   const searchParams = useSearchParams();
   const [calls, setCalls] = useState<ScheduledCallItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState(searchParams.get("status") || "ALL");
+  const [statusFilter, setStatusFilter] = useState(searchParams?.get("status") || "ALL");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
