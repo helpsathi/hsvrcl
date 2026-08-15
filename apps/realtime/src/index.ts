@@ -936,6 +936,94 @@ setInterval(() => {
   processScheduledMessages().catch(console.error);
 }, 60000);
 
+// Background Task: Check for Pending Mentors & Payouts for Admin Notification
+async function checkAdminPendingTasks() {
+  try {
+    const pendingMentorsCount = await prisma.mentorProfile.count({
+      where: { status: "PENDING" }
+    });
+
+    const pendingPayoutsCount = await prisma.withdrawalRequest.count({
+      where: { status: "PENDING" }
+    });
+
+    if (pendingMentorsCount === 0 && pendingPayoutsCount === 0) return;
+
+    // Check if we already sent an admin summary in the last hour
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    const recentAlert = await prisma.notification.findFirst({
+      where: {
+        title: { contains: "Pending Actions" },
+        targetRole: "ADMIN",
+        createdAt: { gt: oneHourAgo }
+      }
+    });
+
+    if (recentAlert) return; // Don't spam, we already alerted them recently
+
+    // Create a new notification
+    const title = "⚠️ Pending Actions Required";
+    let message = "";
+    if (pendingMentorsCount > 0 && pendingPayoutsCount > 0) {
+      message = `You have ${pendingMentorsCount} pending mentor applications and ${pendingPayoutsCount} pending withdrawal requests waiting for review.`;
+    } else if (pendingMentorsCount > 0) {
+      message = `You have ${pendingMentorsCount} pending mentor application(s) waiting for review.`;
+    } else {
+      message = `You have ${pendingPayoutsCount} pending withdrawal request(s) waiting for review.`;
+    }
+
+    const notification = await prisma.notification.create({
+      data: {
+        title,
+        message,
+        type: "SYSTEM_ALERT",
+        targetRole: "ADMIN",
+        link: pendingMentorsCount > 0 ? "/admin/mentors?status=PENDING" : "/admin/payouts",
+        isRead: false,
+      }
+    });
+
+    // Notify all admins via Web Push & Realtime
+    const admins = await prisma.user.findMany({
+      where: { OR: [{ role: "ADMIN" }, { adminSubRole: { not: null } }] }
+    });
+
+    for (const admin of admins) {
+      // Real-time
+      io.to(`user_${admin.id}`).emit('global_notification', {
+        id: notification.id,
+        title,
+        message,
+        type: "SYSTEM_ALERT",
+        link: notification.link,
+        createdAt: notification.createdAt.toISOString()
+      });
+
+      // Web Push
+      await sendWebPush(admin.id, title, message, notification.link || "/admin").catch(() => {});
+      
+      // Email
+      if (admin.email) {
+        await sendEmailNotification(
+          admin.email,
+          `${title} | HelpSathi Admin`,
+          `<div style="font-family: Arial, sans-serif; padding: 20px;">
+             <h2>${title}</h2>
+             <p>${message}</p>
+             <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://helpsathi.com'}${notification.link}" style="background: #4338ca; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">View Dashboard</a>
+           </div>`
+        ).catch(() => {});
+      }
+    }
+  } catch (err) {
+    console.error("Error in checkAdminPendingTasks:", err);
+  }
+}
+
+// Run 10 seconds after boot, then every 1 hour
+setTimeout(() => checkAdminPendingTasks(), 10000);
+setInterval(() => checkAdminPendingTasks(), 60 * 60 * 1000);
+
 process.on('SIGTERM', cleanup);
 process.on('SIGINT', cleanup);
 process.on("SIGINT", () => gracefulShutdown("SIGINT"));
