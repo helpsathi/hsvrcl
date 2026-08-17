@@ -94,6 +94,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
         avgRating: mentorProfile.avgRating,
         reviewCount: mentorProfile.reviewCount,
         freeTrial: mentorProfile.freeTrial,
+        socialMedia: mentorProfile.socialMedia,
         bookingNoticeHours: mentorProfile.bookingNoticeHours,
         isSubscribed,
         subscriptionStatus,

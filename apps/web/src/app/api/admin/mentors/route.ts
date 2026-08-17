@@ -66,7 +66,7 @@ export async function POST(req: Request) {
     if (!auth.authorized) return auth.response!;
 
     const body = await req.json();
-    const { userId, bio, linkedinUrl, categories, skills, languages, experience, monthlyPrice, perMinutePrice, callPricePerMinute, commissionRate, freeTrial, subscribedBookingFree } = body;
+    const { userId, bio, linkedinUrl, categories, skills, languages, experience, monthlyPrice, perMinutePrice, callPricePerMinute, commissionRate, freeTrial, subscribedBookingFree, socialMedia } = body;
 
     if (!userId) {
       return NextResponse.json({ error: "userId is required to create mentor profile" }, { status: 400 });
@@ -98,6 +98,7 @@ export async function POST(req: Request) {
           commissionRate: commissionRate !== undefined ? Number(commissionRate) : undefined,
           freeTrial: Boolean(freeTrial),
           subscribedBookingFree: subscribedBookingFree !== undefined ? Boolean(subscribedBookingFree) : true,
+          socialMedia: Array.isArray(socialMedia) ? socialMedia : [],
         },
         create: {
           userId,
@@ -114,6 +115,7 @@ export async function POST(req: Request) {
           commissionRate: commissionRate !== undefined ? Number(commissionRate) : null,
           freeTrial: Boolean(freeTrial),
           subscribedBookingFree: subscribedBookingFree !== undefined ? Boolean(subscribedBookingFree) : true,
+          socialMedia: Array.isArray(socialMedia) ? socialMedia : [],
         },
       });
 

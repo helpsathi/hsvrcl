@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { PublicNav } from "@/components/layout/PublicNav";
 import { PublicFooter } from "@/components/layout/PublicFooter";
 import { 
@@ -11,7 +12,8 @@ import {
   ArrowRight,
   GraduationCap,
   Target,
-  Handshake
+  Handshake,
+  EnvelopeSimple
 } from "@phosphor-icons/react/dist/ssr";
 
 import { Metadata } from "next";
@@ -140,6 +142,60 @@ export default function AboutPage() {
                 <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                   Participate in open discussions, join group masterclasses, and exchange study notes with peers across the country.
                 </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Founder & Vision */}
+        <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 sm:p-12 border border-slate-200/80 dark:border-slate-800 shadow-xl overflow-hidden relative">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl -mr-32 -mt-32"></div>
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl -ml-32 -mb-32"></div>
+            
+            <div className="relative z-10 flex flex-col md:flex-row items-center gap-10 md:gap-16">
+              <div className="w-full md:w-1/3 flex-shrink-0 relative">
+                <div className="rounded-2xl overflow-hidden border-4 border-white dark:border-slate-800 shadow-2xl relative z-10">
+                  <Image 
+                    src="/founder.jpg" 
+                    alt="Jitendra Yadav, Founder and CEO" 
+                    width={600}
+                    height={900}
+                    className="w-full h-auto object-cover"
+                    priority
+                  />
+                </div>
+                {/* Decorative blob behind image */}
+                <div className="absolute -bottom-4 -right-4 w-full h-full bg-blue-100 dark:bg-blue-900/30 rounded-2xl -z-0"></div>
+              </div>
+              
+              <div className="w-full md:w-2/3 space-y-6">
+                <div>
+                  <h2 className="text-xs font-bold uppercase tracking-widest text-blue-600 dark:text-blue-400 mb-2">Our Founder</h2>
+                  <h3 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white">Jitendra Yadav</h3>
+                  <p className="text-lg text-slate-500 dark:text-slate-400 font-medium">Founder and CEO</p>
+                </div>
+                
+                <div className="h-px w-16 bg-slate-200 dark:bg-slate-700"></div>
+                
+                <div className="space-y-4">
+                  <h4 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <Sparkle className="text-blue-500" weight="fill" /> The Vision
+                  </h4>
+                  <p className="text-slate-600 dark:text-slate-300 leading-relaxed text-lg italic">
+                    "My vision is to bridge the gap between ambition and achievement. I believe every student in India, regardless of their background, deserves access to the right guidance at the right time. HelpSathi is not just a platform; it's a movement to democratize mentorship and empower the next generation of leaders."
+                  </p>
+                </div>
+                
+                <div className="pt-2 flex items-center gap-3">
+                  <a 
+                    href="mailto:founder@helpsathi.com" 
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-600 dark:text-blue-400 font-medium text-sm sm:text-base border border-blue-200/60 dark:border-blue-800/60 transition-colors shadow-sm"
+                  >
+                    <EnvelopeSimple weight="bold" className="text-lg" />
+                    founder@helpsathi.com
+                  </a>
+                </div>
               </div>
             </div>
           </div>

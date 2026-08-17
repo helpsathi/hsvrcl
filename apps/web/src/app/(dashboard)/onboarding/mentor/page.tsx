@@ -10,6 +10,8 @@ import {
   CheckCircle,
   Info,
   Sparkle,
+  Plus,
+  Trash,
 } from "@phosphor-icons/react";
 import Link from "next/link";
 import { validateUsernameSyntax } from "@/lib/username";
@@ -70,6 +72,7 @@ export default function MentorOnboardingPage() {
       from: "09:00",
       to: "18:00",
     },
+    socialMedia: [] as { platform: string; url: string; followerBracket: string }[],
   });
 
   // Fetch Existing Application Status & Profile Data
@@ -117,6 +120,7 @@ export default function MentorOnboardingPage() {
                     from: "09:00",
                     to: "18:00",
                   },
+                  socialMedia: Array.isArray(p.socialMedia) ? p.socialMedia : [],
                 });
                 if (p.resumeUrl) {
                   setUploadedFileName(
@@ -305,6 +309,29 @@ export default function MentorOnboardingPage() {
       availability: { ...prev.availability, [e.target.name]: e.target.value },
     }));
   };
+  const handleSocialMediaAdd = () => {
+    if (formData.socialMedia.length >= 6) return;
+    setFormData((prev) => ({
+      ...prev,
+      socialMedia: [...prev.socialMedia, { platform: "youtube", url: "", followerBracket: "0 - 1K" }],
+    }));
+  };
+
+  const handleSocialMediaRemove = (index: number) => {
+    setFormData((prev) => {
+      const updated = [...prev.socialMedia];
+      updated.splice(index, 1);
+      return { ...prev, socialMedia: updated };
+    });
+  };
+
+  const handleSocialMediaChange = (index: number, field: string, value: string) => {
+    setFormData((prev) => {
+      const updated = [...prev.socialMedia];
+      updated[index] = { ...updated[index], [field]: value };
+      return { ...prev, socialMedia: updated };
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -348,6 +375,7 @@ export default function MentorOnboardingPage() {
         resumeUrl: formData.resumeUrl,
         availability: formData.availability,
         freeTrial: formData.freeTrial,
+        socialMedia: formData.socialMedia,
       };
 
       const res = await fetch("/api/mentors/onboarding", {
@@ -844,10 +872,92 @@ export default function MentorOnboardingPage() {
                     </p>
                   )}
                   <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 mt-1.5 leading-relaxed">
-                    Upload a clear ID or Degree certificate to verify your
-                    credentials.
+                    Upload one PDF containing your Resume and any one ID (Aadhaar/PAN/Voter ID).
                   </p>
                 </div>
+              </div>
+
+              {/* Social Media Container */}
+              <div className="space-y-5 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-5 sm:p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xl transition-colors">
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-3">
+                  <h3 className="font-extrabold text-base text-slate-900 dark:text-white tracking-tight">
+                    Social Media Presence <span className="text-slate-400 font-normal text-xs">(Optional)</span>
+                  </h3>
+                  {formData.socialMedia.length < 6 && (
+                    <button
+                      type="button"
+                      onClick={handleSocialMediaAdd}
+                      className="flex items-center gap-1.5 text-xs font-bold text-brand-600 dark:text-brand-400 hover:text-brand-700 bg-brand-50 dark:bg-brand-950/40 px-3 py-1.5 rounded-lg transition-colors"
+                    >
+                      <Plus weight="bold" /> Add Account
+                    </button>
+                  )}
+                </div>
+
+                {formData.socialMedia.length === 0 ? (
+                  <p className="text-xs text-slate-500 dark:text-slate-400 text-center py-4">
+                    Add your YouTube, Instagram, or other social profiles to build trust with students.
+                  </p>
+                ) : (
+                  <div className="space-y-4">
+                    {formData.socialMedia.map((account, index) => (
+                      <div key={index} className="flex flex-col sm:flex-row gap-3 items-start sm:items-center bg-slate-50 dark:bg-slate-900/50 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800/80">
+                        <div className="w-full sm:w-1/3">
+                          <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Platform</label>
+                          <select
+                            value={account.platform}
+                            onChange={(e) => handleSocialMediaChange(index, "platform", e.target.value)}
+                            className="w-full border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100"
+                          >
+                            <option value="youtube">YouTube</option>
+                            <option value="instagram">Instagram</option>
+                            <option value="facebook">Facebook</option>
+                            <option value="twitter">Twitter / X</option>
+                            <option value="linkedin">LinkedIn</option>
+                            <option value="other">Other</option>
+                          </select>
+                        </div>
+                        <div className="w-full sm:w-1/3">
+                          <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Profile URL</label>
+                          <input
+                            type="url"
+                            value={account.url}
+                            onChange={(e) => handleSocialMediaChange(index, "url", e.target.value)}
+                            placeholder="https://..."
+                            className="w-full border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100"
+                            required
+                          />
+                        </div>
+                        <div className="w-full sm:w-1/3">
+                          <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Followers</label>
+                          <div className="flex items-center gap-2">
+                            <select
+                              value={account.followerBracket}
+                              onChange={(e) => handleSocialMediaChange(index, "followerBracket", e.target.value)}
+                              className="w-full border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100"
+                            >
+                              <option value="0 - 1K">0 - 1K</option>
+                              <option value="1K - 5K">1K - 5K</option>
+                              <option value="5K - 20K">5K - 20K</option>
+                              <option value="20K - 50K">20K - 50K</option>
+                              <option value="50K - 1L">50K - 1L</option>
+                              <option value="1L - 5L">1L - 5L</option>
+                              <option value="5L+">5L+</option>
+                            </select>
+                            <button
+                              type="button"
+                              onClick={() => handleSocialMediaRemove(index)}
+                              className="p-2 text-slate-400 hover:text-danger hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition-colors shrink-0"
+                              title="Remove account"
+                            >
+                              <Trash weight="bold" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -56,6 +56,7 @@ interface PendingMentor {
     } | null;
     status: string;
     freeTrial: boolean;
+    socialMedia?: any[];
     createdAt: string;
   };
 }
@@ -672,6 +673,28 @@ export default function AdminApplicationsPage() {
                     )}
                   </div>
                 </div>
+
+                {/* Additional Social Media Section */}
+                {selectedMentor.mentorProfile.socialMedia && selectedMentor.mentorProfile.socialMedia.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+                    <h5 className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-3">Other Social Media Profiles</h5>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {selectedMentor.mentorProfile.socialMedia.map((acc, idx) => (
+                        <div key={idx} className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl p-3 flex items-center justify-between">
+                          <div>
+                            <p className="text-xs font-bold text-slate-800 dark:text-slate-200 capitalize">{acc.platform}</p>
+                            <span className="inline-block mt-1 text-[10px] font-bold bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300 px-2 py-0.5 rounded-full">
+                              {acc.followerBracket} followers
+                            </span>
+                          </div>
+                          <a href={acc.url} target="_blank" rel="noreferrer" className="text-blue-500 hover:text-blue-600">
+                            <ArrowSquareOut weight="bold" className="text-lg" />
+                          </a>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* EDIT MODE FORM vs VIEW MODE */}

@@ -24,12 +24,24 @@ export async function POST(req: Request) {
       resumeUrl, 
       availability, 
       username,
-      freeTrial
+      freeTrial,
+      socialMedia
     } = body;
 
     // Validation
     if (!bio || !categories || !skills || !languages || experience === undefined || !perMinutePrice || !resumeUrl) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    if (socialMedia) {
+      if (!Array.isArray(socialMedia) || socialMedia.length > 6) {
+        return NextResponse.json({ error: "Invalid social media data or exceeded max 6 limit." }, { status: 400 });
+      }
+      for (const acc of socialMedia) {
+        if (!acc.platform || !acc.url || !acc.followerBracket) {
+          return NextResponse.json({ error: "Incomplete social media account details." }, { status: 400 });
+        }
+      }
     }
 
     // Check if mentor profile already exists
@@ -89,6 +101,7 @@ export async function POST(req: Request) {
             status: "PENDING", // Reset to pending for admin review
             rejectionReason: null, // Clear previous rejection reason
             freeTrial: Boolean(freeTrial),
+            socialMedia: socialMedia || [],
           },
         });
         profileId = updated.id;
@@ -113,6 +126,7 @@ export async function POST(req: Request) {
             rejectionReason: null,
             freeTrial: Boolean(freeTrial),
             commissionRate: 30, // Default for new mentors
+            socialMedia: socialMedia || [],
           },
         });
         profileId = created.id;

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, ShareNetwork, SealCheck, Star, ChatCircleDots, PhoneCall, CheckCircle, WarningCircle, Spinner, ShieldCheck, Lightning, LockKey, Crown, ArrowsClockwise } from "@phosphor-icons/react";
+import { ArrowLeft, ShareNetwork, SealCheck, Star, ChatCircleDots, PhoneCall, CheckCircle, WarningCircle, Spinner, ShieldCheck, Lightning, LockKey, Crown, ArrowsClockwise, YoutubeLogo, InstagramLogo, FacebookLogo, TwitterLogo, LinkedinLogo, Link as LinkIcon } from "@phosphor-icons/react";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useToast } from "@/components/providers/ToastProvider";
 import ReviewModal from "@/components/mentors/ReviewModal";
@@ -47,6 +47,7 @@ interface Mentor {
     studentAvatar: string | null;
     date: string;
   }[];
+  socialMedia?: { platform: string; url: string; followerBracket: string }[];
 }
 
 export default function MentorProfilePage() {
@@ -314,6 +315,36 @@ export default function MentorProfilePage() {
                     {skill}
                   </span>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* Social Media Links */}
+          {mentor.socialMedia && mentor.socialMedia.length > 0 && (
+            <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-xl space-y-4 transition-colors">
+              <h3 className="text-base font-extrabold text-slate-900 dark:text-white tracking-tight">Social Media & Following</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {mentor.socialMedia.map((acc, idx) => {
+                  let Icon = LinkIcon;
+                  let colorClass = "text-slate-500 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700";
+                  if (acc.platform === "youtube") { Icon = YoutubeLogo; colorClass = "text-red-500 bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20"; }
+                  else if (acc.platform === "instagram") { Icon = InstagramLogo; colorClass = "text-pink-500 bg-pink-50 dark:bg-pink-500/10 border-pink-200 dark:border-pink-500/20"; }
+                  else if (acc.platform === "facebook") { Icon = FacebookLogo; colorClass = "text-blue-600 bg-blue-50 dark:bg-blue-600/10 border-blue-200 dark:border-blue-600/20"; }
+                  else if (acc.platform === "twitter") { Icon = TwitterLogo; colorClass = "text-sky-500 bg-sky-50 dark:bg-sky-500/10 border-sky-200 dark:border-sky-500/20"; }
+                  else if (acc.platform === "linkedin") { Icon = LinkedinLogo; colorClass = "text-blue-700 bg-blue-50 dark:bg-blue-700/10 border-blue-200 dark:border-blue-700/20"; }
+                  
+                  return (
+                    <a key={idx} href={acc.url} target="_blank" rel="noreferrer" className={`flex flex-col p-3.5 rounded-2xl border transition-all hover:-translate-y-1 hover:shadow-lg ${colorClass}`}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Icon weight="fill" className="text-2xl shrink-0" />
+                        <span className="text-xs font-bold capitalize text-slate-900 dark:text-white truncate">{acc.platform}</span>
+                      </div>
+                      <span className="text-[10px] font-extrabold uppercase tracking-wide opacity-80 mt-auto">
+                        {acc.followerBracket} Follows
+                      </span>
+                    </a>
+                  );
+                })}
               </div>
             </div>
           )}
