@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import * as PhosphorIcons from "@phosphor-icons/react";
 import { 
   Users, 
   CurrencyInr, 
@@ -42,7 +41,6 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [healthData, setHealthData] = useState<{ status: string; issues: any[]; totalActiveIssues: number } | null>(null);
 
   const fetchStats = async () => {
     setLoading(true);
@@ -63,40 +61,8 @@ export default function AdminDashboard() {
     }
   };
 
-  const fetchHealth = async () => {
-    try {
-      const res = await fetch("/api/admin/alerts");
-      if (res.ok) {
-        const data = await res.json();
-        setHealthData(data);
-      }
-    } catch (e) {
-      console.error("Failed to check system health", e);
-    }
-  };
-
-  const handleResolveAlert = async (alertId: string) => {
-    try {
-      await fetch("/api/admin/alerts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "RESOLVE", alertId }),
-      });
-      // Immediately clear from UI
-      setHealthData(prev => prev ? {
-        ...prev,
-        issues: prev.issues.filter((i: any) => i.id !== alertId),
-        totalActiveIssues: Math.max(0, prev.issues.length - 1),
-        status: prev.issues.length <= 1 ? "HEALTHY" : "ATTENTION"
-      } : null);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
   useEffect(() => {
     fetchStats();
-    fetchHealth();
   }, []);
 
   if (loading) {
@@ -176,106 +142,6 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
-
-      {/* Live System Health & Attention Alerts Widget */}
-      {healthData && healthData.issues && healthData.issues.length > 0 && (
-        <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl p-6 rounded-[24px] border border-white/50 dark:border-slate-800/50 shadow-xl shadow-blue-900/5 transition-all">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 pb-4 border-b border-slate-200/60 dark:border-slate-800/60">
-          <div className="flex items-center gap-3.5">
-            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-2xl shadow-inner ${
-              !healthData || healthData.status === "HEALTHY" 
-                ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
-                : "bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/40 animate-pulse"
-            }`}>
-              {!healthData || healthData.status === "HEALTHY" ? (
-                <PhosphorIcons.ShieldCheck weight="duotone" />
-              ) : (
-                <PhosphorIcons.WarningCircle weight="duotone" />
-              )}
-            </div>
-            <div>
-              <div className="flex items-center gap-2.5">
-                <h2 className="text-lg font-black text-slate-900 dark:text-white tracking-tight">System Health & Live Alerts</h2>
-                <span className={`px-3 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-sm ${
-                  !healthData || healthData.status === "HEALTHY"
-                    ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/90 dark:text-emerald-300 border border-emerald-500/30"
-                    : "bg-amber-100 text-amber-900 dark:bg-amber-950/90 dark:text-amber-300 border border-amber-500/40 animate-pulse"
-                }`}>
-                  {!healthData || healthData.status === "HEALTHY" ? "🟢 0 Active Issues" : `⚠️ ${healthData.totalActiveIssues} Attention Needed`}
-                </span>
-              </div>
-              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-0.5">
-                Real-time automated diagnostics for dashboard categories, promotional offers, database connectivity, and sync logs.
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2.5 shrink-0">
-            <button
-              onClick={() => { fetchStats(); fetchHealth(); }}
-              className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 transition active:scale-95 shadow-sm"
-            >
-              <ArrowClockwise weight="bold" /> Refresh Status
-            </button>
-            <Link
-              href="/admin/notifications"
-              className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-md shadow-blue-500/20"
-            >
-              View Notification Log →
-            </Link>
-          </div>
-        </div>
-
-        {!healthData || (healthData.status === "HEALTHY" && healthData.issues.length === 0) ? (
-          <div className="py-6 px-4 rounded-2xl bg-emerald-500/5 dark:bg-emerald-500/10 border border-emerald-500/20 text-center flex flex-col items-center justify-center gap-2">
-            <div className="p-2 bg-emerald-500/10 rounded-full text-emerald-500 mb-1">
-              <PhosphorIcons.CheckCircle weight="fill" className="text-3xl" />
-            </div>
-            <p className="font-extrabold text-sm text-emerald-900 dark:text-emerald-200">All Platform Systems & Syncs Are Operational</p>
-            <p className="text-xs text-slate-600 dark:text-slate-400 max-w-lg leading-relaxed">
-              Categories, promotional offers, database connection pools, and real-time messaging services are operating normally. Resolved alerts automatically disappear from this list.
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {healthData.issues.map((issue: any) => (
-              <div key={issue.id} className="p-4 rounded-2xl bg-amber-500/10 dark:bg-amber-950/30 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition hover:bg-amber-500/15 shadow-sm">
-                <div className="flex items-start gap-3.5">
-                  <div className="p-2 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold text-xl shrink-0 mt-0.5">
-                    <PhosphorIcons.WarningCircle weight="fill" />
-                  </div>
-                  <div>
-                    <h4 className="font-extrabold text-sm text-amber-950 dark:text-amber-200 flex items-center gap-2">
-                      {issue.title}
-                    </h4>
-                    <p className="text-xs text-slate-700 dark:text-slate-300 mt-1 leading-relaxed">{issue.message}</p>
-                    <span className="inline-block mt-1.5 text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md">
-                      Action Required
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2.5 shrink-0 w-full sm:w-auto justify-end border-t sm:border-t-0 pt-3 sm:pt-0 border-amber-500/20">
-                  {issue.link && (
-                    <Link
-                      href={issue.link}
-                      className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white text-xs font-bold rounded-xl shadow-md shadow-orange-500/20 transition active:scale-95"
-                    >
-                      Configure & Fix →
-                    </Link>
-                  )}
-                  <button
-                    onClick={() => handleResolveAlert(issue.id)}
-                    className="px-4 py-2 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 text-xs font-bold rounded-xl transition shadow-sm active:scale-95 flex items-center gap-1"
-                  >
-                    <PhosphorIcons.Check weight="bold" className="text-emerald-500" />
-                    Mark Resolved
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-      )}
 
       {stats.pendingMentors > 0 && (
         <div className="bg-orange-500/10 backdrop-blur-xl border border-orange-500/30 p-5 rounded-[24px] flex items-center justify-between shadow-lg shadow-orange-500/5">

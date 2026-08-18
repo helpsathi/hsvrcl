@@ -949,13 +949,13 @@ async function checkAdminPendingTasks() {
 
     if (pendingMentorsCount === 0 && pendingPayoutsCount === 0) return;
 
-    // Check if we already sent an admin summary in the last hour
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    // Check if we already sent an admin summary in the last 24 hours
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const recentAlert = await prisma.notification.findFirst({
       where: {
         title: { contains: "Pending Actions" },
         targetRole: "ADMIN",
-        createdAt: { gt: oneHourAgo }
+        createdAt: { gt: oneDayAgo }
       }
     });
 
@@ -1020,9 +1020,9 @@ async function checkAdminPendingTasks() {
   }
 }
 
-// Run 10 seconds after boot, then every 1 hour
+// Run 10 seconds after boot, then every 24 hours
 setTimeout(() => checkAdminPendingTasks(), 10000);
-setInterval(() => checkAdminPendingTasks(), 60 * 60 * 1000);
+setInterval(() => checkAdminPendingTasks(), 24 * 60 * 60 * 1000);
 
 process.on('SIGTERM', cleanup);
 process.on('SIGINT', cleanup);

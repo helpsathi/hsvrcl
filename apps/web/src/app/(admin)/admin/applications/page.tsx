@@ -124,6 +124,7 @@ export default function AdminApplicationsPage() {
             availability: m.availability || { days: ["Mon", "Tue", "Wed", "Thu", "Fri"], from: "09:00", to: "18:00" },
             status: m.status || "PENDING",
             freeTrial: m.freeTrial || false,
+            socialMedia: m.socialMedia || [],
             createdAt: m.createdAt || new Date().toISOString(),
           }
         }));
