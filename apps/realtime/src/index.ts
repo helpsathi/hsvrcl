@@ -263,7 +263,7 @@ app.post('/notify', async (req, res) => {
     // 4. Dispatch transactional email alert asynchronously for high-priority notification types if configured
     if (["BOOKING", "PAYMENT", "PAYOUT", "ACCOUNT"].includes(eventCategory)) {
       prisma.user.findUnique({ where: { id: userId }, select: { email: true, name: true } })
-        .then((u) => {
+        .then((u: any) => {
           if (u?.email) {
             sendEmailNotification(
               u.email,
@@ -281,7 +281,7 @@ app.post('/notify', async (req, res) => {
             ).catch(err => console.error("Email helper trigger failed:", err));
           }
         })
-        .catch((e) => console.error("Failed user fetch for email notification:", e));
+        .catch((e: any) => console.error("Failed user fetch for email notification:", e));
     }
 
     return res.json({ success: true, batched: isBatched, payload });
@@ -446,7 +446,7 @@ io.on('connection', (socket) => {
 
       // Check if student has active subscription for this mentor
       const mentorProfileId = session.mentor?.mentorProfile?.id || "__none__";
-      const activeSub = session.student?.subscriptions?.find(sub => sub.mentorId === mentorProfileId);
+      const activeSub = session.student?.subscriptions?.find((sub: any) => sub.mentorId === mentorProfileId);
 
       // Re-evaluate duration and auto-end on EVERY message (only for pay-per-minute non-subscribed calls)
       if (firstMsgTime && session.perMinuteRate > 0 && !activeSub) {
@@ -543,7 +543,7 @@ io.on('connection', (socket) => {
                 tag: `chat-${sessionId}`
               });
 
-              await Promise.all(subs.map(async (sub) => {
+              await Promise.all(subs.map(async (sub: any) => {
                 try {
                   await webPush.sendNotification({
                     endpoint: sub.endpoint,
@@ -866,14 +866,14 @@ async function processScheduledMessages() {
             where: { mentorId: mentorProfile.id, isActive: true, endDate: { gt: new Date() } },
             select: { studentId: true }
           });
-          studentIds = subs.map(s => s.studentId);
+          studentIds = subs.map((s: any) => s.studentId);
         } else if (msg.targetAudience === "ALL_PAST_STUDENTS") {
           const sessions = await prisma.chatSession.findMany({
             where: { mentorId: msg.mentorId },
             select: { studentId: true },
             distinct: ["studentId"]
           });
-          studentIds = sessions.map(s => s.studentId);
+          studentIds = sessions.map((s: any) => s.studentId);
         } else if (msg.targetAudience === "SPECIFIC") {
           studentIds = msg.targetStudentIds;
         }
