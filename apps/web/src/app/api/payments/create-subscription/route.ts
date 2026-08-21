@@ -151,44 +151,20 @@ export async function POST(req: Request) {
     let orderId: string | undefined;
 
     try {
-      // 1. Try attempting to create a Recurring Plan & Subscription in Razorpay
-      const plan = await razorpay.plans.create({
-        period: "monthly",
-        interval: 1,
-        item: {
-          name: `Mentorship: ${mentorName || mentorId}`,
-          amount: Math.round(amount * 100), // in paise
-          currency: "INR",
-          description: "Monthly Mentor Subscription on HelpSathi",
-        },
-      });
-
-      const subscription = await razorpay.subscriptions.create({
-        plan_id: plan.id,
-        total_count: 12, // Default to 12 months (1 year), user can cancel anytime
-        quantity: 1,
-        customer_notify: 1,
-        notes: {
-          studentId: session.userId,
-          mentorId: actualMentorProfileId,
-          type: "MONTHLY_SUBSCRIPTION",
-        },
-      });
-      subscriptionId = subscription.id;
-    } catch (rzpSubError: any) {
-      console.warn("Razorpay Subscriptions API failed (recurring billing disabled or KYC pending on Test Account). Falling back to standard Razorpay Orders API:", rzpSubError);
+      // TEMPORARY WORKAROUND: Force one-time standard payments (Orders API)
+      // because Razorpay UPI Autopay (Subscriptions) requires explicit approval
+      // which is not available on new live accounts yet.
       const order = await razorpay.orders.create({
-        amount: Math.round(amount * 100),
+        amount: Math.round(amount * 100), // in paise
         currency: "INR",
         receipt: `sub_${session.userId.slice(0, 8)}_${Date.now()}`,
         notes: {
           studentId: session.userId,
           mentorId: actualMentorProfileId,
-          type: "MONTHLY_SUBSCRIPTION",
+          type: "MONTHLY_SUBSCRIPTION", // Still treated as subscription in DB
         },
       });
       orderId = order.id;
-    }
 
     return NextResponse.json({
       subscriptionId,
