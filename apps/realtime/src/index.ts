@@ -889,7 +889,7 @@ async function processScheduledMessages() {
               targetAudience: msg.targetAudience,
               attachments: msg.attachments,
               targetStudentIds: studentIds,
-            },
+            } as any,
           });
         }
 
