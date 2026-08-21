@@ -89,6 +89,84 @@ export async function POST(req: Request) {
             link: "/wallet",
           });
         }
+      } else if (amount > 0 && type === "MONTHLY_SUBSCRIPTION") {
+        const studentId = notes.studentId;
+        const mentorId = notes.mentorId;
+        const paymentRef = paymentEntity?.id || payload.event_id;
+
+        if (studentId && mentorId) {
+          const processedData = await prisma.$transaction(async (tx) => {
+            const existingTx = await tx.transaction.findFirst({
+              where: { referenceId: paymentRef },
+            });
+            if (existingTx) return null; // already processed by frontend
+
+            const mentor = await tx.mentorProfile.findFirst({
+              where: { OR: [{ id: mentorId }, { userId: mentorId }] }
+            });
+            if (!mentor) return null;
+
+            const existingSub = await tx.subscription.findFirst({
+              where: { studentId, mentorId: mentor.id },
+              orderBy: { endDate: "desc" }
+            });
+
+            const now = new Date();
+            const baseDate = (existingSub && existingSub.isActive && existingSub.endDate > now) ? new Date(existingSub.endDate) : new Date();
+            const endDate = new Date(baseDate);
+            endDate.setMonth(endDate.getMonth() + 1);
+
+            if (existingSub) {
+              await tx.subscription.update({
+                where: { id: existingSub.id },
+                data: { price: amount, endDate, isActive: true, paymentMethod: "RAZORPAY" }
+              });
+            } else {
+              await tx.subscription.create({
+                data: { studentId, mentorId: mentor.id, price: amount, startDate: new Date(), endDate, isActive: true, autoRenew: false, paymentMethod: "RAZORPAY" }
+              });
+            }
+
+            const defaultCommission = await getPlatformConfigNumber(CONFIG_KEYS.PLATFORM_COMMISSION_RATE);
+            const commissionRate = mentor.commissionRate ?? defaultCommission;
+            const platformCommission = amount * (commissionRate / 100);
+            const earnings = amount - platformCommission;
+
+            const mentorWallet = await tx.wallet.upsert({
+              where: { userId: mentor.userId },
+              update: { balance: { increment: earnings } },
+              create: { userId: mentor.userId, balance: earnings },
+            });
+
+            await tx.transaction.create({
+              data: {
+                walletId: mentorWallet.id,
+                type: "CREDIT",
+                amount: earnings,
+                description: "Subscription Earning (Late Sync)",
+                referenceId: paymentRef,
+              },
+            });
+            return { earnings, mentorUserId: mentor.userId, studentId };
+          });
+
+          if (processedData) {
+            await dispatchNotification({
+              userId: processedData.mentorUserId,
+              title: "🎉 New Subscription (Late Sync)!",
+              message: `A student subscribed to your mentorship. +₹${processedData.earnings} added to your earnings.`,
+              type: "PAYMENT",
+              link: "/mentor-dashboard",
+            });
+            await dispatchNotification({
+              userId: processedData.studentId,
+              title: "✅ Subscription Activated",
+              message: `Your pending payment was processed successfully. You can now chat with your mentor!`,
+              type: "PAYMENT",
+              link: "/my-mentors",
+            });
+          }
+        }
       }
     } else if (event === "subscription.charged") {
       // Handle Autopay renewal only if subscription is currently active (not explicitly cancelled by student)

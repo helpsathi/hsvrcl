@@ -167,6 +167,7 @@ export async function POST(req: Request) {
             type: "CREDIT",
             amount: earnings,
             description: "Subscription Earning",
+            referenceId: paymentId || undefined,
           },
         });
       } else {
@@ -180,6 +181,7 @@ export async function POST(req: Request) {
                 type: "CREDIT",
                 amount: earnings,
                 description: "Subscription Earning",
+                referenceId: paymentId || undefined,
               }
             }
           }
