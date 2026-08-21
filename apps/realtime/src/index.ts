@@ -105,7 +105,7 @@ export async function sendWebPush(
     const payload = JSON.stringify({ title, body, url, tag });
 
     await Promise.all(
-      subs.map(async (sub) => {
+      subs.map(async (sub: any) => {
         try {
           await webPush.sendNotification(
             {
