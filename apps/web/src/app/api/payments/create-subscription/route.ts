@@ -150,21 +150,20 @@ export async function POST(req: Request) {
     let subscriptionId: string | undefined;
     let orderId: string | undefined;
 
-    try {
-      // TEMPORARY WORKAROUND: Force one-time standard payments (Orders API)
-      // because Razorpay UPI Autopay (Subscriptions) requires explicit approval
-      // which is not available on new live accounts yet.
-      const order = await razorpay.orders.create({
-        amount: Math.round(amount * 100), // in paise
-        currency: "INR",
-        receipt: `sub_${session.userId.slice(0, 8)}_${Date.now()}`,
-        notes: {
-          studentId: session.userId,
-          mentorId: actualMentorProfileId,
-          type: "MONTHLY_SUBSCRIPTION", // Still treated as subscription in DB
-        },
-      });
-      orderId = order.id;
+    // TEMPORARY WORKAROUND: Force one-time standard payments (Orders API)
+    // because Razorpay UPI Autopay (Subscriptions) requires explicit approval
+    // which is not available on new live accounts yet.
+    const order = await razorpay.orders.create({
+      amount: Math.round(amount * 100), // in paise
+      currency: "INR",
+      receipt: `sub_${session.userId.slice(0, 8)}_${Date.now()}`,
+      notes: {
+        studentId: session.userId,
+        mentorId: actualMentorProfileId,
+        type: "MONTHLY_SUBSCRIPTION", // Still treated as subscription in DB
+      },
+    });
+    orderId = order.id;
 
     return NextResponse.json({
       subscriptionId,
