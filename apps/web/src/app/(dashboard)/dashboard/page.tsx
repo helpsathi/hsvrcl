@@ -480,13 +480,13 @@ export default function DashboardHome() {
       )}
 
       {/* Subscribed Mentors */}
-      {subscribedMentors.length > 0 && (
+      {subscribedMentors.filter(m => !m.subscription?.isExpired).length > 0 && (
         <>
           <div className="px-4 lg:px-6 py-3 flex items-center justify-between mt-2">
             <h2 className="text-base font-bold text-brand-700 dark:text-brand-400">My Subscribed Mentors</h2>
           </div>
           <div className="p-4 lg:p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {subscribedMentors.map((mentor) => (
+            {subscribedMentors.filter(m => !m.subscription?.isExpired).map((mentor) => (
               <MentorCard 
                 key={mentor.id} 
                 mentor={mentor} 
@@ -638,7 +638,7 @@ export default function DashboardHome() {
               onCall={handleCall}
               onBook={handleBook}
               onSubscribe={handleSubscribe}
-              isSubscribed={subscribedMentors.some(sm => sm.id === mentor.id || sm.profileId === mentor.id)}
+              isSubscribed={subscribedMentors.some(sm => (sm.id === mentor.id || sm.profileId === mentor.id) && !sm.subscription?.isExpired)}
             />
           ))
         ) : (
