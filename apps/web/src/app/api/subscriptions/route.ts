@@ -58,7 +58,6 @@ export async function POST(req: Request) {
       }
       const actualMentorProfileId = mentor.id;
 
-      // Check existing subscription status
       const existingSub = await tx.subscription.findFirst({
         where: {
           studentId: session.userId,
@@ -66,6 +65,18 @@ export async function POST(req: Request) {
         },
         orderBy: { endDate: "desc" }
       });
+
+      // Fix for Race Condition: Check if webhook already processed this exact payment
+      if (isDirectPayment && paymentId) {
+        const alreadyProcessedTx = await tx.transaction.findFirst({
+          where: { referenceId: paymentId }
+        });
+        
+        if (alreadyProcessedTx && existingSub) {
+          // Webhook beat the frontend to it and already activated the subscription
+          return existingSub;
+        }
+      }
 
       const now = new Date();
       const nextPaymentMethod = isDirectPayment ? "RAZORPAY" : "WALLET";
