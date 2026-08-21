@@ -21,6 +21,7 @@ export interface MentorProps {
   callPricePerMinute?: number;
   monthlyPrice?: number;
   mustTry?: boolean;
+  subscription?: any;
 }
 
 export interface MentorCardProps {
