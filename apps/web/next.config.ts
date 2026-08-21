@@ -39,6 +39,14 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'blogger.googleusercontent.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'helpsathi-uploads.s3.ap-south-1.amazonaws.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'ik.imagekit.io',
+      },
     ],
   },
   experimental: {},

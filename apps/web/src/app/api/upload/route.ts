@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import ImageKit from "imagekit";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 
-const imagekit = new ImageKit({
-  publicKey: process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY || "",
-  privateKey: process.env.IMAGEKIT_PRIVATE_KEY || "",
-  urlEndpoint: process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT || "",
+const s3 = new S3Client({
+  region: process.env.AWS_S3_REGION || "ap-south-1",
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
+  },
 });
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB Limit
@@ -13,7 +15,7 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB Limit
 export async function POST(req: Request) {
   try {
     const session = await getSession();
-    if (!session) {
+    if (!session || !session.userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -35,17 +37,25 @@ export async function POST(req: Request) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
+    
+    // Create a unique filename
+    const uniqueFilename = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+    const objectKey = `uploads/${session.userId}/${uniqueFilename}`;
+    const bucketName = process.env.AWS_S3_BUCKET || "helpsathi-uploads";
 
     let url: string;
     try {
-      const response = await imagekit.upload({
-        file: buffer,
-        fileName: file.name,
-        folder: "/helpsathi_chat_attachments",
-      });
-      url = response.url;
-    } catch (ikError: any) {
-      console.warn("ImageKit cloud upload failed, falling back to base64 data URI storage:", ikError.message || ikError);
+      await s3.send(new PutObjectCommand({
+        Bucket: bucketName,
+        Key: objectKey,
+        Body: buffer,
+        ContentType: file.type,
+      }));
+      
+      const cdnUrl = process.env.NEXT_PUBLIC_CDN_URL || `https://${bucketName}.s3.${process.env.AWS_S3_REGION || "ap-south-1"}.amazonaws.com`;
+      url = `${cdnUrl}/${objectKey}`;
+    } catch (s3Error: any) {
+      console.warn("S3 upload failed, falling back to base64 data URI storage:", s3Error.message || s3Error);
       url = `data:${file.type};base64,${buffer.toString("base64")}`;
     }
 
