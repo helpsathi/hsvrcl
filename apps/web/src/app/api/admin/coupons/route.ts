@@ -70,6 +70,7 @@ export async function POST(req: Request) {
       firstTimeOnly,
       applicableCategories,
       applicableMentors,
+      applicableFor,
       expiresAt,
       showOnDashboard,
     } = body;
@@ -90,6 +91,7 @@ export async function POST(req: Request) {
         firstTimeOnly: Boolean(firstTimeOnly),
         applicableCategories: Array.isArray(applicableCategories) ? applicableCategories : (applicableCategories ? String(applicableCategories).split(",").map(s => s.trim()).filter(Boolean) : []),
         applicableMentors: Array.isArray(applicableMentors) ? applicableMentors : (applicableMentors ? String(applicableMentors).split(",").map(s => s.trim()).filter(Boolean) : []),
+        applicableFor: Array.isArray(applicableFor) ? applicableFor : [],
         showOnDashboard: Boolean(showOnDashboard),
         expiresAt: expiresAt ? new Date(expiresAt) : null,
       },

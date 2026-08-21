@@ -15,11 +15,21 @@ export async function GET(req: Request) {
 
     const { searchParams } = new URL(req.url);
     const status = searchParams.get("status") || undefined;
+    const search = searchParams.get("search")?.trim() || undefined;
     const page = parseInt(searchParams.get("page") || "1", 10);
     const limit = parseInt(searchParams.get("limit") || "50", 10);
     const skip = (Math.max(page, 1) - 1) * limit;
 
-    const whereClause = status ? { status: status as any } : undefined;
+    const whereClause: any = {};
+    if (status) {
+      whereClause.status = status;
+    }
+    if (search) {
+      whereClause.OR = [
+        { user: { name: { contains: search, mode: "insensitive" } } },
+        { user: { email: { contains: search, mode: "insensitive" } } },
+      ];
+    }
 
     const [mentors, total] = await Promise.all([
       prisma.mentorProfile.findMany({

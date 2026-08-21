@@ -21,6 +21,7 @@ interface Coupon {
   firstTimeOnly?: boolean;
   applicableCategories?: string[];
   applicableMentors?: string[];
+  applicableFor?: string[];
   expiresAt: string | null;
   showOnDashboard?: boolean;
   createdAt: string;
@@ -49,7 +50,8 @@ const initialForm = {
   perUserLimit: "1",
   firstTimeOnly: false,
   applicableCategories: "",
-  applicableMentors: "",
+  applicableMentors: [] as { id: string; name: string }[],
+  applicableFor: [] as string[],
   expiresAt: "",
   showOnDashboard: false,
 };
@@ -64,6 +66,33 @@ export default function AdminCouponsPage() {
   const [formData, setFormData] = useState(initialForm);
   const [deleteCouponId, setDeleteCouponId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  // Mentor Search State
+  const [mentorSearchQuery, setMentorSearchQuery] = useState("");
+  const [mentorSearchResults, setMentorSearchResults] = useState<any[]>([]);
+  const [searchingMentors, setSearchingMentors] = useState(false);
+
+  useEffect(() => {
+    if (!mentorSearchQuery || mentorSearchQuery.length < 2) {
+      setMentorSearchResults([]);
+      return;
+    }
+    const delayDebounceFn = setTimeout(async () => {
+      setSearchingMentors(true);
+      try {
+        const res = await fetch(`/api/admin/mentors?limit=10&status=APPROVED&search=${encodeURIComponent(mentorSearchQuery)}`);
+        const data = await res.json();
+        if (data.mentors) {
+          setMentorSearchResults(data.mentors);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setSearchingMentors(false);
+      }
+    }, 300);
+    return () => clearTimeout(delayDebounceFn);
+  }, [mentorSearchQuery]);
+
   const [stats, setStats] = useState({
     totalCoupons: 0,
     activeCoupons: 0,
@@ -129,6 +158,8 @@ export default function AdminCouponsPage() {
   function handleOpenCreate() {
     setEditingId(null);
     setFormData(initialForm);
+    setMentorSearchQuery("");
+    setMentorSearchResults([]);
     setShowModal(true);
   }
 
@@ -144,7 +175,8 @@ export default function AdminCouponsPage() {
       perUserLimit: String(c.perUserLimit || 1),
       firstTimeOnly: Boolean(c.firstTimeOnly),
       applicableCategories: c.applicableCategories?.join(", ") || "",
-      applicableMentors: c.applicableMentors?.join(", ") || "",
+      applicableMentors: c.applicableMentors?.map(id => ({ id, name: "ID: " + id.slice(0, 8) })) || [],
+      applicableFor: c.applicableFor || [],
       expiresAt: c.expiresAt ? c.expiresAt.split("T")[0] : "",
       showOnDashboard: Boolean(c.showOnDashboard),
     });
@@ -212,7 +244,8 @@ export default function AdminCouponsPage() {
         perUserLimit: Number(formData.perUserLimit || 1),
         firstTimeOnly: formData.firstTimeOnly,
         applicableCategories: formData.applicableCategories ? formData.applicableCategories.split(",").map(s => s.trim()).filter(Boolean) : [],
-        applicableMentors: formData.applicableMentors ? formData.applicableMentors.split(",").map(s => s.trim()).filter(Boolean) : [],
+        applicableMentors: formData.applicableMentors.map(m => m.id),
+        applicableFor: formData.applicableFor,
         expiresAt: formData.expiresAt ? new Date(formData.expiresAt).toISOString() : null,
         showOnDashboard: formData.showOnDashboard,
       };
@@ -575,14 +608,92 @@ export default function AdminCouponsPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Applicable Mentor Profile IDs (Comma separated)</label>
+                <label className="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-2">Applicable For (Scope)</label>
+                <div className="flex items-center gap-6">
+                  <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.applicableFor.includes("WALLET_RECHARGE")}
+                      onChange={(e) => {
+                        const newScopes = e.target.checked 
+                          ? [...formData.applicableFor, "WALLET_RECHARGE"] 
+                          : formData.applicableFor.filter(s => s !== "WALLET_RECHARGE");
+                        setFormData({ ...formData, applicableFor: newScopes });
+                      }}
+                      className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                    />
+                    Wallet Recharge
+                  </label>
+                  <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.applicableFor.includes("SUBSCRIPTION")}
+                      onChange={(e) => {
+                        const newScopes = e.target.checked 
+                          ? [...formData.applicableFor, "SUBSCRIPTION"] 
+                          : formData.applicableFor.filter(s => s !== "SUBSCRIPTION");
+                        setFormData({ ...formData, applicableFor: newScopes });
+                      }}
+                      className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                    />
+                    Subscription
+                  </label>
+                </div>
+                <span className="block text-xs text-slate-500 mt-1">If none are selected, it defaults to BOTH.</span>
+              </div>
+
+              <div className="relative">
+                <label className="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Applicable Mentors</label>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {formData.applicableMentors.map((m) => (
+                    <span key={m.id} className="inline-flex items-center gap-1 px-3 py-1 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 text-xs font-bold rounded-full">
+                      {m.name}
+                      <button type="button" onClick={() => setFormData({ ...formData, applicableMentors: formData.applicableMentors.filter(x => x.id !== m.id) })} className="hover:text-red-500">
+                        <X weight="bold" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
                 <input
                   type="text"
-                  placeholder="Leave blank for all mentors"
-                  value={formData.applicableMentors}
-                  onChange={(e) => setFormData({ ...formData, applicableMentors: e.target.value })}
+                  placeholder="Search mentor by name or email... (leave empty for all mentors)"
+                  value={mentorSearchQuery}
+                  onChange={(e) => setMentorSearchQuery(e.target.value)}
                   className="w-full px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
+                {mentorSearchQuery.length >= 2 && (
+                  <div className="absolute z-10 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                    {searchingMentors ? (
+                      <div className="p-3 text-center text-xs text-slate-500">Searching...</div>
+                    ) : mentorSearchResults.length === 0 ? (
+                      <div className="p-3 text-center text-xs text-slate-500">No mentors found</div>
+                    ) : (
+                      mentorSearchResults.map(m => (
+                        <div 
+                          key={m.id} 
+                          className="p-3 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer flex items-center gap-3 border-b border-slate-100 dark:border-slate-700/50 last:border-0"
+                          onClick={() => {
+                            if (!formData.applicableMentors.find(x => x.id === m.id)) {
+                              setFormData({ ...formData, applicableMentors: [...formData.applicableMentors, { id: m.id, name: m.user.name }] });
+                            }
+                            setMentorSearchQuery("");
+                            setMentorSearchResults([]);
+                          }}
+                        >
+                          {m.user.avatar ? (
+                            <img src={m.user.avatar} className="w-8 h-8 rounded-full object-cover" alt="" />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-xs font-bold">{m.user.name.charAt(0)}</div>
+                          )}
+                          <div>
+                            <div className="text-sm font-bold text-slate-900 dark:text-white">{m.user.name}</div>
+                            <div className="text-xs text-slate-500">{m.user.email}</div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
               </div>
 
               <div>

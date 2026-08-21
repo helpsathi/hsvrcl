@@ -149,6 +149,7 @@ export default function WalletPage() {
         body: JSON.stringify({
           code: codeToTest.trim(),
           amount: amount,
+          context: "WALLET_RECHARGE",
         }),
         signal: abortController.signal,
       });

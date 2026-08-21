@@ -70,6 +70,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       firstTimeOnly,
       applicableCategories,
       applicableMentors,
+      applicableFor,
       expiresAt,
       showOnDashboard,
       isActive
@@ -86,6 +87,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     if (firstTimeOnly !== undefined) data.firstTimeOnly = Boolean(firstTimeOnly);
     if (applicableCategories !== undefined) data.applicableCategories = Array.isArray(applicableCategories) ? applicableCategories : [];
     if (applicableMentors !== undefined) data.applicableMentors = Array.isArray(applicableMentors) ? applicableMentors : [];
+    if (applicableFor !== undefined) data.applicableFor = Array.isArray(applicableFor) ? applicableFor : [];
     if (expiresAt !== undefined) data.expiresAt = new Date(expiresAt);
     if (showOnDashboard !== undefined) data.showOnDashboard = Boolean(showOnDashboard);
     if (isActive !== undefined) data.isActive = Boolean(isActive);

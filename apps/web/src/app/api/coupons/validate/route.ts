@@ -9,7 +9,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { code, amount, mentorId, category } = await req.json();
+    const { code, amount, mentorId, category, context } = await req.json();
 
     if (!code) {
       return NextResponse.json({ error: "Coupon code is required" }, { status: 400 });
@@ -53,6 +53,15 @@ export async function POST(req: Request) {
       const totalUsagesByUser = await prisma.couponUsage.count({ where: { userId: session.userId } });
       if (totalUsagesByUser > 0) {
         return NextResponse.json({ error: "This coupon is valid for first-time users only" }, { status: 400 });
+      }
+    }
+
+    // Check scope constraint (WALLET_RECHARGE vs SUBSCRIPTION)
+    if (context && coupon.applicableFor && coupon.applicableFor.length > 0) {
+      if (!coupon.applicableFor.includes(context as any)) {
+        return NextResponse.json({ 
+          error: `This coupon is only applicable for ${coupon.applicableFor.includes("SUBSCRIPTION") ? "subscription purchases" : "wallet recharges"}` 
+        }, { status: 400 });
       }
     }
 

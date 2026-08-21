@@ -112,6 +112,7 @@ export default function SubscriptionCheckoutModal({
           amount: basePrice,
           mentorId: mentor.id,
           category: mentor.categories?.[0],
+          context: "SUBSCRIPTION",
         }),
       });
       const data = await res.json();

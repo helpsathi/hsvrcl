@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MagnifyingGlass, ChatCircleDots, SealCheck, BookOpenText, Atom, Code, Buildings, Briefcase, RocketLaunch, Gift, Wallet, CalendarCheck } from "@phosphor-icons/react/dist/ssr";
+import { MagnifyingGlass, ChatCircleDots, SealCheck, BookOpenText, Atom, Code, Buildings, Briefcase, RocketLaunch, Gift, Wallet, CalendarCheck, InstagramLogo, YoutubeLogo, WhatsappLogo, TelegramLogo, FacebookLogo } from "@phosphor-icons/react/dist/ssr";
 import Image from "next/image";
 import { TextAnimate } from "@/components/magicui/text-animate";
 import { ScrollBasedVelocity } from "@/components/magicui/scroll-based-velocity";
@@ -368,7 +368,21 @@ export default function LandingPage() {
                   Empowering millions of students through personalized 1-on-1 mentorship with verified rankers and industry experts.
                 </p>
                 <div className="flex gap-4">
-                  {/* Social Icons removed as requested */}
+                  <a href="https://whatsapp.com/channel/0029VbDpXDkAjPXHpnAOrW1k" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 hover:text-green-500 hover:bg-slate-800 hover:border-green-500/50 transition-all">
+                    <WhatsappLogo weight="fill" className="text-xl" />
+                  </a>
+                  <a href="https://t.me/helpsathi" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 hover:text-blue-400 hover:bg-slate-800 hover:border-blue-400/50 transition-all">
+                    <TelegramLogo weight="fill" className="text-xl" />
+                  </a>
+                  <a href="https://www.instagram.com/helpsathii" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 hover:text-pink-500 hover:bg-slate-800 hover:border-pink-500/50 transition-all">
+                    <InstagramLogo weight="fill" className="text-xl" />
+                  </a>
+                  <a href="https://www.youtube.com/@helpsathii" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-slate-800 hover:border-red-500/50 transition-all">
+                    <YoutubeLogo weight="fill" className="text-xl" />
+                  </a>
+                  <a href="https://www.facebook.com/share/1DTY7cFLYJ/" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 hover:text-blue-500 hover:bg-slate-800 hover:border-blue-500/50 transition-all">
+                    <FacebookLogo weight="fill" className="text-xl" />
+                  </a>
                 </div>
               </div>
 

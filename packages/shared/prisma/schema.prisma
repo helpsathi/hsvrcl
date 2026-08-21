@@ -44,6 +44,11 @@ enum CouponDiscountType {
   FLAT
 }
 
+enum CouponApplicableFor {
+  WALLET_RECHARGE
+  SUBSCRIPTION
+}
+
 enum WithdrawalStatus {
   PENDING
   APPROVED
@@ -352,6 +357,7 @@ model Coupon {
   firstTimeOnly        Boolean            @default(false)
   applicableCategories String[]
   applicableMentors    String[]           @default([])
+  applicableFor        CouponApplicableFor[] @default([])
   expiresAt            DateTime?
   showOnDashboard      Boolean            @default(false)
   createdAt            DateTime           @default(now())
