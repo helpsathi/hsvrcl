@@ -3,7 +3,7 @@ import { getSession } from "@/lib/auth";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 
 const s3 = new S3Client({
-  region: process.env.AWS_S3_REGION || "ap-south-1",
+  region: process.env.AWS_REGION || "ap-south-1",
   credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
@@ -41,7 +41,8 @@ export async function POST(req: Request) {
     // Create a unique filename
     const uniqueFilename = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
     const objectKey = `uploads/${session.userId}/${uniqueFilename}`;
-    const bucketName = process.env.AWS_S3_BUCKET || "helpsathi-uploads";
+    const bucketName = process.env.AWS_S3_BUCKET_NAME || "helpsathi-images-123";
+    const region = process.env.AWS_REGION || "ap-south-1";
 
     let url: string;
     try {
@@ -52,7 +53,7 @@ export async function POST(req: Request) {
         ContentType: file.type,
       }));
       
-      const cdnUrl = process.env.NEXT_PUBLIC_CDN_URL || `https://${bucketName}.s3.${process.env.AWS_S3_REGION || "ap-south-1"}.amazonaws.com`;
+      const cdnUrl = process.env.NEXT_PUBLIC_CDN_URL || `https://${bucketName}.s3.${region}.amazonaws.com`;
       url = `${cdnUrl}/${objectKey}`;
     } catch (s3Error: any) {
       console.warn("S3 upload failed, falling back to base64 data URI storage:", s3Error.message || s3Error);
