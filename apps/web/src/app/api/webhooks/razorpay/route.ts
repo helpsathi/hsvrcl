@@ -34,7 +34,7 @@ export async function POST(req: Request) {
       const type = notes.type || "WALLET_RECHARGE";
       const amount = (paymentEntity?.amount || 0) / 100; // convert paise to INR
 
-      if (userId && amount > 0 && type === "WALLET_RECHARGE") {
+      if (false && userId && amount > 0 && type === "WALLET_RECHARGE") {
         // Prevent duplicate transaction processing using atomic database transaction
         const paymentRef = paymentEntity?.id || payload.event_id;
         const processed = await prisma.$transaction(async (tx) => {
