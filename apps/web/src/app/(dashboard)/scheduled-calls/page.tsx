@@ -248,9 +248,9 @@ export default function ScheduledCallsPage() {
                     <div className="flex flex-wrap items-center gap-2 mt-1">
                       {(call.status === "CONFIRMED" || call.status === "ACCEPTED") && (
                         <div className="flex items-center gap-2">
-                          {call.meetLink && call.meetLink.startsWith("http") ? (
+                          {call.meetLink ? (
                             <a
-                              href={call.meetLink}
+                              href={call.meetLink.startsWith("http") ? call.meetLink : `https://${call.meetLink}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs sm:text-sm font-black rounded-xl flex items-center gap-1.5 shadow-md transition-all hover:scale-105"
