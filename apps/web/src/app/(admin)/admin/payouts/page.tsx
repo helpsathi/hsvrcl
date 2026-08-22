@@ -18,7 +18,7 @@ interface Payout {
     avatar: string | null;
   } | null;
   adminNotes?: string | null;
-  bankDetails?: string | null;
+  bankDetails?: any;
 }
 
 export default function AdminPayoutsPage() {
@@ -344,7 +344,9 @@ export default function AdminPayoutsPage() {
             
             <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 mb-6">
               <pre className="whitespace-pre-wrap text-sm font-mono text-slate-700 dark:text-slate-300">
-                {viewingBankDetails.bankDetails || "No bank details provided."}
+                {typeof viewingBankDetails.bankDetails === 'object' && viewingBankDetails.bankDetails !== null
+                  ? JSON.stringify(viewingBankDetails.bankDetails, null, 2)
+                  : viewingBankDetails.bankDetails || "No bank details provided."}
               </pre>
             </div>
 
